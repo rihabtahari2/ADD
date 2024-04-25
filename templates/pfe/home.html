@@ -1,0 +1,142 @@
+{% extends 'index1.html'%}
+{% block home %}
+<title>IntelliCount</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+<style>
+    /* Ajoutez une bordure autour de tous les éléments de formulaire */
+    .form-group input,
+    .form-group textarea,
+    .form-group select,
+    .form-group input[type="file"] {
+        border: 1px solid #9a95d8;
+        border-radius: 4px; /* Ajoutez des coins arrondis si désiré */
+    }
+    .scrolling-container {
+        max-height: 400px; /* Définissez la hauteur maximale du conteneur ici */
+        overflow-y: auto; /* Activez le défilement vertical */
+    }
+/* Style général du conteneur de recherche */
+.search-container {
+  position: relative;
+  display: inline-block;
+  width: 40%; /* Définit la largeur du conteneur à 100% */
+}
+
+/* Style du formulaire pour aligner les éléments horizontalement */
+.search-container form {
+  display: flex;
+  width: 100%;
+}
+
+/* Style de l'entrée de texte */
+.search-container input[type=text] {
+  flex: 1; /* Laisse l'entrée de texte occuper tout l'espace disponible */
+  padding: 10px;
+  border: none;
+  border-radius: 5px 0 0 5px; /* Coins arrondis uniquement à gauche */
+  font-size: 16px;
+}
+
+/* Style du bouton de recherche */
+.search-container button {
+  background-color: #f2f2f2;
+  padding: 10px;
+  border: none;
+  border-radius: 0 5px 5px 0; /* Coins arrondis uniquement à droite */
+  cursor: pointer;
+}
+
+/* Style de l'icône de recherche */
+.search-container button i {
+  font-size: 20px;
+  color: #888;
+}
+
+
+
+</style>
+
+
+       
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+        <a class="navbar-brand mx-2" href="#">Espace de travail</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+       
+        <button class="btn btn-success me-auto" type="button" data-toggle="modal" data-target="#importModal">Importer vos données</button>
+    </div>
+</nav>
+
+<div class="modal fade" id="importModal" tabindex="-1" role="dialog" aria-labelledby="importModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importModalLabel"> Importer vos données </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="mainForm" method="POST" action="" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="nom" class="form-label">Nom d'espace de travaille</label>
+                        {{ form.nom }}
+                    </div>
+                    <div class="form-group">
+                        <label for="description" class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    <div class="form-group">
+                        <label for="client" class="form-label client-label">{{ form.client.label }}</label>
+                        {{ form.client }}
+                    </div>
+                    <input type="file" name="myfile">
+                    <button  class="btn btn-primary"type="submit" id="importButton">Importer</button>
+                </form>    
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Fermer</button>
+            </div>
+        </div>   
+    </div>
+</div>
+<div class="search-container">
+    <form action="/search" method="get">
+      <input type="text" placeholder="Trouver votre client..." name="search">
+      <button type="submit"><i class="material-icons">search</i></button>
+    </form>
+  </div>
+  
+<br>
+<div class="row scrolling-container">
+    {% for dataimport in fichiers %}
+        <div class="col-sm-4 mb-3">
+            <div class="card" style="width: 18rem;" onclick="loadDashboard('{{ dataimport.Id }}')">
+                <div class="card-body">
+                    <h6 class="card-subtitle mb-2 text-body-secondary">{{ dataimport.nom }}</h6>
+                    <h6 class="card-subtitle mb-2 text-body-secondary">{{ dataimport.client.clientName }}</h6>
+                    <p class="card-text">{{ dataimport.description }}</p>
+                    <button class="btn btn-primary" onclick="loadDashboard('{{ dataimport.id }}')">Plus de détails</button>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<script>
+    function loadDashboard(dataimportId) {
+        window.location.href = "{% url 'dashboard' %}?dataimport_id=" + dataimportId;
+    }
+</script>
+
+
+
+
+
+
+{% endblock %}

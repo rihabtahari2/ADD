@@ -1,0 +1,25 @@
+{% extends 'index1.html'%}
+{% block client_assistant %}
+
+
+    <h2>Détails de l'assistant</h2>
+    <p><strong>Nom d'utilisateur :</strong> {{ assistant.username }}</p>
+    <p><strong>Email :</strong> {{ assistant.email }}</p>
+    <hr>
+    <h2>Sélectionner les clients à affecter</h2>
+    <form method="post" action="{% url 'assistant' %}">
+        {% csrf_token %}
+        <input type="hidden" name="assistant_id" value="{{ assistant.pk }}">
+        {% for client in clients_disponibles %}
+            <div>
+                <input type="checkbox" name="clients" value="{{ client.pk }}">
+                <label>{{ client.clientName}}</label>
+            </div>
+        {% endfor %}
+        <button type="submit">Enregistrer</button>
+    </form>
+
+
+
+
+{% endblock %}

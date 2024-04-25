@@ -1,0 +1,254 @@
+{% extends 'index1.html'%}
+{% block donnee %}
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Factures</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+        <link href="https://cdn.jsdelivr.net/npm/handsontable@11.0.0/dist/handsontable.full.min.css" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+        <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' >
+            <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    
+        <style>
+
+            body {
+                background-color: #ffffff; /* Blanc */
+            }
+           div.card input {
+            /* Vos styles ici */
+            margin: 0 auto; /* Pour centrer horizontalement les input */
+            }
+          .input-lg {
+            width: 230px; /* ou une autre largeur en pixels */
+            font-size: 19px; /* ou une autre taille de police en pixels */
+            }
+            #hot {
+                width: 100%;
+                height: 400px;
+                margin: 20px auto;
+                overflow: auto;
+            }
+            .icon {
+                font-size: 20px;
+                cursor: pointer;
+                margin-right: 10px;
+            }
+            /* Style pour le menu déroulant */
+            .dropdown {
+                position: relative;
+                display: inline-block;
+            }
+            .dropdown-content {
+                display: none;
+                position: absolute;
+                background-color: #f9f9f9;
+                min-width: 160px;
+                box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+                z-index: 1;
+            }
+            .dropdown-content a {
+                color: black;
+                padding: 12px 16px;
+                text-decoration: none;
+                display: block;
+            }
+            .dropdown-content a:hover {
+                background-color: #f1f1f1;
+            }
+            .dropdown:hover .dropdown-content {
+                display: block;
+            }
+        </style>
+    </head>
+    <div class="btn btn-primary" style="position: absolute; top: 40px; right: 70px;">
+        <a href="{% url 'dashboard' %}?dataimport_id={{ fichier_id }}" style="text-decoration: none; font-size: medium; color: #fff; padding: 10px 20px; border-radius: 5px;">
+            <i class="fas fa-tachometer-alt" style="margin-right: 15px";></i>Son Tableau de Bord</a>
+    </div>
+    </script>
+        <div>
+            <ul class="list-inline"> <!-- Utilisez la classe list-inline de Bootstrap pour aligner les éléments sur une ligne -->
+                <li class="list-inline-item"><h5>{{ fichiers.nom }} de {{ fichiers.client }}</h5></li>
+                <li class="list-inline-item mr-2">
+                    <!-- Icône de favori -->
+                    <i id="favorite-icon" class="icon far fa-star"></i>
+                </li>
+                <li class="list-inline-item mr-2">
+                    <!-- Icône d'actualisation -->
+                    <a href="#" onclick="window.location.reload(); return false;">
+                        <i class="icon fas fa-sync-alt"></i>
+                    </a>
+                </li>
+                <li class="list-inline-item" id="saveButton" >
+                    <i class="icon fas fa-save"></i>
+                </li>
+            </ul> 
+        </div>        
+        
+             
+        <br>
+        <input type="file" id="fileInput" style="display: none;" />    <!-- Bouton d'importation avec attribut data-id -->
+        <button type="button" class="btn btn-primary" id="importButton" data-id="{{ fichiers.Id }}">
+            <i class="fas fa-cloud-upload-alt"></i> Importer des données dans cette table
+        </button>
+        <div id="messages-container">
+            {% for msg in messages %}
+                {% if msg.tags == 'error' %}
+                    <div class="alert alert-danger" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> <!-- Icône de danger -->
+                        {{ msg }}
+                    </div>
+                {% else %}
+                    <div class="alert alert-success" role="alert">
+                        <i class="fas fa-check-circle"></i> <!-- Icône de succès -->
+                        {{ msg }}
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+        
+    
+<!-- Script JavaScript pour gérer le clic sur le bouton d'importation -->
+    <script>
+        // Sélection de l'icône de favori
+        const favoriteIcon = document.getElementById('favorite-icon');
+
+        // Ajout d'un gestionnaire d'événements pour le clic sur l'icône
+            favoriteIcon.addEventListener('click', function() {
+                // Toggle (basculer) la classe 'fas' pour changer l'icône en plein ou vide
+                favoriteIcon.classList.toggle('fas');
+            });
+    </script>
+    <script>
+        document.getElementById("importButton").addEventListener("click", function() {
+            document.getElementById("fileInput").click();
+        });
+
+        document.getElementById("fileInput").addEventListener("change", function() {
+            var file = this.files[0];
+            if (file) {
+                var formData = new FormData();
+                formData.append('file', file);
+                var fichierId = document.getElementById("importButton").getAttribute("data-id");
+
+                fetch(`/import_data/${fichierId}/`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-CSRFToken': getCSRFToken()
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log("Fichier envoyé et traité avec succès !");
+                        return response.json(); // Convertir la réponse en JSON
+                    } else {
+                        throw new Error("Une erreur s'est produite lors de l'envoi du fichier.");
+                    }
+                })
+                .then(data => {
+                    if (data.success) {
+                        console.log(data.message); // Afficher le message de succès
+                        window.location.href = `/donne/${fichierId}`; // Redirection après traitement réussi
+                    } else {
+                        console.error(data.message); // Afficher le message d'erreur
+                    }
+                })
+                .catch(error => {
+                    console.error("Une erreur s'est produite lors de l'envoi du fichier :", error);
+                });
+            }
+        });
+
+        // Fonction pour récupérer le jeton CSRF
+        function getCSRFToken() {
+            var cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                var cookies = document.cookie.split(';');
+                for (var i = 0; i < cookies.length; i++) {
+                    var cookie = cookies[i].trim();
+                    // Vérifiez si le nom du cookie correspond à csrftoken
+                    if (cookie.substring(0, 10) === 'csrftoken=') {
+                        // Extrait la valeur du jeton CSRF
+                        cookieValue = decodeURIComponent(cookie.substring(10));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+    </script>
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/js/all.min.js"></script>
+        <div id="hot"></div>
+        <script src="https://cdn.jsdelivr.net/npm/handsontable@11.0.0/dist/handsontable.full.min.js"></script>
+        <script>
+          document.addEventListener('DOMContentLoaded', function() {
+            const data = JSON.parse('{{ data | escapejs }}'); // Récupérer les données passées depuis Django
+            const container = document.getElementById('hot');
+            const hot = new Handsontable(container, {
+                data: data,
+                rowHeaders: true,
+                colHeaders: ['Date', 'Numéro de facture', 'Nom du fournisseur','Nom du client', 'Libellé', 'Prix unitaire', 
+                            'Quantité', 'TVA', 'Total hors taxe', 'Total TTC','Catégorie'],
+                contextMenu: true,
+                manualColumnResize: true,
+                manualRowResize: true,
+                dropdownMenu: true,
+                filters: true,
+                colWidths: 160,
+                rowHeights: 30,
+                columnSorting: true,
+                navigableHeaders: true,
+                readOnly: false,
+                autoWrapRow: true,
+                autoWrapCol: true,
+                scrollH: true,
+                scrollV: true,
+                licenseKey: 'non-commercial-and-evaluation',
+            });
+
+            const saveButton = document.getElementById('saveButton');
+
+saveButton.addEventListener('click', function() {
+    // Collecter les modifications
+    const modifications = collecterModifications();
+    const modifiedData = hot.getData(); // Récupérer les données modifiées du tableau
+    
+    fetch(`/save_data/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCSRFToken(), // Ajouter le jeton CSRF
+        },
+        body: JSON.stringify({
+            modifiedData: modifiedData,
+            modifications: modifications  // Envoyer les modifications au backend
+        }),
+    })
+    .then(response => {
+        if (response.ok) {
+            // Afficher un message de succès si l'enregistrement réussit
+            alert('Les modifications ont été enregistrées avec succès !');
+        } else {
+            // Afficher un message d'erreur si l'enregistrement échoue
+            alert('Une erreur s\'est produite lors de l\'enregistrement des modifications.');
+        }
+    })
+    .catch(error => {
+        console.error('Erreur lors de la tentative d\'enregistrement des modifications :', error);
+        alert('Une erreur s\'est produite lors de l\'enregistrement des modifications.');
+    });
+});
+        });
+
+        </script>
+
+    
+    </html>
+{% endblock %}
+
+

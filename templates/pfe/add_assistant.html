@@ -1,0 +1,76 @@
+{% extends 'index1.html'%}
+{% load static %}
+{%  block add_assistant %}
+    <style>
+        .custom-heading {
+            font-size: 1.5rem; /* Taille de police personnalisée */
+            font-weight: bold; /* Police en gras */
+            text-align: center; /* Centrer le texte horizontalement */
+            margin-bottom: 20px; /* Marge en bas personnalisée */
+        }
+        .container {
+            margin-left: 150px;
+            justify-content: center;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        label {
+            font-size: 18px;
+            margin-bottom: 20px; /* Ajoute de l'espace entre chaque label et le mot */
+            width: 280px; /* Ajuste la largeur des labels selon vos besoins */
+        }
+    </style>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <p class="custom-heading">Ajouter un Assistant comptable</p>
+                        <form action="" method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="email" class="form-label">First Name</label>
+                                {{ form.first_name}}
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Last Name</label>
+                                {{ form.last_name}}
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">username</label>
+                                {{ form.username}}
+                            </div>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                {{ form.email }}
+                            </div>
+                            <div class="mb-3">
+                                <label for="password1" class="form-label">Password</label>
+                                {{ form.password1}}
+                            </div>
+                            <div class="mb-3">
+                                <label for="adresse" class="form-label">Confirm Password</label>
+                                {{ form.password2}}
+                            </div>
+                            <div class="mb-3">
+                                <label for="clients" class="form-label">Clients</label>
+                                <select class="form-select"  multiple aria-label="Multiple select example" aria-label="Client select" name="clients">
+                                    <option selected>Open this select menu</option>
+                                    {% for client in form.clients.field.queryset %}
+                                        <option value="{{ client.clientId }}">{{ client.clientName }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary">Ajouter</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock  %}

@@ -1,0 +1,20 @@
+
+
+    <!-- Formulaire pour ajouter un client -->
+</style>
+
+                    <form id="addForm" action="" method="POST">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom</label>
+                            {{ form.clientName }}
+                        </div>
+                        <div class="mb-3">
+                            <label for="adresse" class="form-label">Adresse</label>
+                            {{ form.clientAdresse }}
+                        </div>
+                        <button type="submit" class="btn btn-primary">Ajouter</button>
+                    </form>
+               
+           
+

@@ -1,0 +1,127 @@
+{% load static %}
+
+{% block navbar %}
+
+    <link href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700,800,900" rel="stylesheet">
+	<link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css' >
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+		<link rel="stylesheet" href="{% static 'css/style1.css'%}">
+  </head>
+  <body>
+		
+		<div class="wrapper d-flex align-items-stretch">
+			<nav id="sidebar">
+				<div class="custom-menu">
+					<button type="button" id="sidebarCollapse" class="btn btn-primary">
+	          <i class="fa fa-bars"></i>
+	          <span class="sr-only">Toggle Menu</span>
+	        </button>
+        </div>
+				<div class="p-4 pt-5">
+		  		<h2><a href="#" class="logo" style="color: white; ">IntelliCount</a></h2>
+				  <span class="profession">👋 Hello, {{request.user}}</span>
+				  
+	        <ul class="list-unstyled components mb-5">
+	          <li class="">
+				<br>
+	            <a href="{% url 'Home' %}"><i class="fas fa-home" style="margin-right: 15px;"></i>Home</a>
+	        
+	          </li>
+			   {% if user_is_expert %}
+					<li>
+						<a href="#pageSubmenu" data-toggle="collapse" aria-expanded="false" class="dropdown-toggle"><i class="fas fa-users" style="margin-right: 15px;"></i>Gestion</a>
+						<ul class="collapse list-unstyled" id="pageSubmenu">
+							<li>
+								<a href="{% url 'assistant' %}">Assistants</a>
+							</li>
+							<li>
+								<a href="{% url 'client' %}">Clients</a>
+							</li>
+						</ul>
+					</li>
+				{% endif %}
+			
+	           <li>
+				
+				{% if fichier_id %}
+					<a href="{% url 'données' fichier_id=fichier_id %}">
+						<i class="fas fa-database" style="margin-right: 15px;"></i>Données
+					</a>
+				{% endif %}
+	          </li>
+			 
+	          <li>
+				<a href="{% url 'dashboard'  %}">
+					<i class="fas fa-chart-bar" style="margin-right: 15px;"></i>Statistics
+				</a>
+								
+	          </li>
+			  
+			  <li>
+				<a href="#"><i class="fas fa-file-alt" style="margin-right: 15px;"></i>Rapports</a>
+				</li>
+			  <li>
+				<div class="bottom-content">
+					<a href="{% url 'logout' %}">
+						<i class='bx bx-log-out icon'></i>
+						<span class="text nav-text"><i class="fas fa-sign-out-alt" style="margin-right: 15px;"></i>Logout</span>
+					  </a>
+	            </div>
+			  </li>
+	        </ul>
+			
+
+	        <div class="mb-5">
+						<form action="#" class="colorlib-subscribe-form">
+	            
+	          </form>
+					</div>
+
+	        <div class="footer">
+	        	<p><!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. -->
+						  Copyright &copy;<script>document.write(new Date().getFullYear());</script> All rights reserved | This template is made with <i class="icon-heart" aria-hidden="true"></i> by 
+						  <!-- Link back to Colorlib can't be removed. Template is licensed under CC BY 3.0. --></p>
+	        </div>
+
+	      </div>
+    	</nav>
+
+        <!-- Page Content  -->
+      <div id="content" class="p-4 p-md-5 pt-5">
+		{% block donnee %}
+		{% endblock %}
+		
+		{% block content %}
+		{% endblock %}
+		
+		{% block home %}
+		{% endblock %}
+
+		{% block Dashboard %}
+
+		{% endblock %}
+		
+		
+		{%  block add_assistant %}
+		{% endblock %}
+
+		{% block assistant %}
+		{% endblock %}
+		
+		{% block client %}	
+    	{% endblock %}
+
+        {%  block add_client %}
+		{% endblock  %}
+		
+		{% block delete %}
+		{% endblock  %}
+
+      </div>
+	
+	  
+    <script src="{% static 'js/jquery.min.js'%}"></script>
+    <script src="{% static 'js/popper.js'%}"></script>
+    <script src="{% static 'js/bootstrap.min.js'%}"></script>
+    <script src="{% static 'js/main.js'%}"></script>
+{% endblock %}

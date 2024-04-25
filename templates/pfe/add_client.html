@@ -1,0 +1,95 @@
+
+{% extends 'index1.html'%}
+{% load static %}
+{%  block add_client %}
+    <style>
+        .custom-heading {
+            font-size: 1.5rem; /* Taille de police personnalisée */
+            font-weight: bold; /* Police en gras */
+            text-align: center; /* Centrer le texte horizontalement */
+            margin-bottom: 20px; /* Marge en bas personnalisée */
+        }
+        .container {
+            font-size: 16px;
+            margin-left: 150px;
+            justify-content: center;
+        }
+        form {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        }
+
+        label {
+            margin-bottom: 10px; /* Ajoute de l'espace entre chaque label et le mot */
+            width: 200px; /* Ajuste la largeur des labels selon vos besoins */
+        }
+        .form-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .form-label {
+            width: 150px;
+            margin-right: 10px;
+        }
+
+        .utilisateur-input {
+             
+            padding: 5px; /* Espacement intérieur */
+            width: 210px;/* Pour que le champ de sélection occupe tout l'espace restant */
+        }
+        
+    </style>
+        
+
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card mt-4">
+                        <div class="card-body">
+                            <p class="custom-heading">Ajouter un Client</p> 
+                            <form id="addForm" action="" method="POST">
+                                {% csrf_token %}
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Nom</label>
+                                    {{ form.clientName }}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="adresse" class="form-label">Adresse</label>
+                                    {{ form.clientAdresse }}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="adresse" class="form-label">Secteur d'Activité</label>
+                                    {{ form.clientActivity }}
+                                </div>
+                                <div class="mb-3">
+                                    <label for="adresse" class="form-label">Contact</label>
+                                    {{ form.contact }}
+                                </div>
+                                <div class="form-group">
+                                    <label for="user" class="form-label utilisateur-label">{{ form.id_user.label }}</label>
+                                    {{ form.id_user }}
+                                </div>
+                                <button type="submit" class="btn btn-primary">Ajouter</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <script>
+            document.getElementById("addForm").addEventListener("submit", function(event) {
+                var clientNameInput = document.getElementById("id_clientName");
+                var clientNameValue = clientNameInput.value;
+                var regex = /^[a-zA-Z\s]*$/; // Expression régulière pour autoriser uniquement des lettres et des espaces
+    
+                if (!regex.test(clientNameValue)) {
+                    alert("Le nom du client ne peut contenir que des lettres et des espaces.");
+                    event.preventDefault(); // Empêche l'envoi du formulaire si la validation échoue
+                }
+            });
+        </script>
+
+{% endblock  %}

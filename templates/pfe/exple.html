@@ -1,0 +1,100 @@
+
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css">
+<style>
+    .container {
+        margin-top: 20px;
+    }
+</style>
+{% endblock %}
+
+{% block client %}
+<div class="container">
+    <div class="row">
+        <div class="col-md-6 mx-auto">
+            <h2>Liste des Clients</h2>
+        </div>
+        <div class="col-md-6 mx-auto">
+            <!-- Bouton pour ouvrir la fenêtre modale -->
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addClientModal">
+                Créer un nouveau Client
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12 mx-auto">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Adresse</th>
+                        <th colspan="3" class="col-3">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for client in clients %}
+                    <tr>
+                        <td>{{ client.clientName }}</td>
+                        <td>{{ client.clientAdresse }}</td>
+                        <td><a class="btn btn-primary" href="#">Voir</a></td>
+                        <td><a class="btn btn-warning" href="{% url 'update_client' pk=client.pk %}">Modifier</a></td>
+                        <td><a href="{% url 'del_client' pk=client.pk %}"><button type="button" class="btn btn-danger">Supprimer</button></a></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Fenêtre modale pour ajouter un client -->
+<div class="modal fade" id="addClientModal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <!-- En-tête de la fenêtre modale -->
+            <div class="modal-header">
+                <h5 class="modal-title" id="addClientModalLabel">Ajouter un client</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <!-- Contenu de la fenêtre modale -->
+            <div class="modal-body">
+                {% include 'pfe/expl1.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Écouteur d'événement pour la soumission du formulaire
+        $('#addForm').submit(function(e) {
+            e.preventDefault(); // Empêche la soumission par défaut du formulaire
+            var formData = $(this).serialize(); // Récupère les données du formulaire
+
+            // Envoi des données via AJAX à la vue Django
+            $.ajax({
+                url: $(this).attr('action'), // Récupère l'URL de l'action du formulaire
+                type: $(this).attr('method'), // Récupère la méthode d'envoi du formulaire (POST)
+                data: formData, // Utilise les données du formulaire
+                success: function(response) {
+                    // Gérer la réponse de la vue Django si nécessaire
+                    console.log(response);
+                    // Fermer la fenêtre modale
+                    $('#addClientModal').modal('hide');
+                },
+                error: function(xhr, status, error) {
+                    // Gérer les erreurs si nécessaire
+                    console.error(error);
+                }
+            });
+        });
+    });
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+{% endblock %}

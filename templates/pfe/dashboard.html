@@ -1,0 +1,367 @@
+{% extends 'index1.html'%}
+{% block Dashboard %}
+<title>Dashboard</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <!--<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"> mana3rch nzid'ha wle na7iha -->
+    </ul>
+    <style>
+        body {
+            background-color: #f1f1f1; /* Blanc */
+        }
+        .bg-white i {
+            color: #6f42c1; /* Couleur violette */
+        }
+        .data-link-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #0763a0;
+            border-radius: 5px;
+            padding: 10px 20px;
+            font-family: Arial, sans-serif;
+        }
+
+        /* Style pour le lien */
+        .data-link {
+            color: #fff;
+            text-decoration: #fff;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Style pour le lien au survol */
+        .data-link:hover {
+            color: #fff;
+        }
+    </style>
+    <body>
+        <h6>Dashboard pour le client : {{ nom_client }}</h6> 
+        <div class="data-link-container" style="position: absolute; top: 40px; right: 70px;">
+            <a href="{% url 'données' fichier_id=dataimport_id %}"class="data-link"> 
+                <i class="fas fa-database icon"></i> Voir ses Données</a>
+        </div> 
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
+                        <i class="fas fa-file-invoice-dollar fa-3x "></i>
+                        <div class="ms-3">
+                            <h6 class="mb-2">Total Facture</h6>
+                            <h6 class="mb-0">{{ nombre_factures }}</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class=" bg-white rounded d-flex align-items-center justify-content-between p-4">
+                        <i class="fa fa-truck fa-3x"></i>
+                        <div class="ms-3">
+                            <h6 class="mb-2">fournisseurs</h6>
+                            <h6 class="mb-0">{{ nombre_fournisseurs }}</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="bg-white rounded d-flex align-items-center justify-content-between p-4">
+                        <i class="fa fa-user fa-3x "></i>
+                        <div class="ms-3">
+                            <h6 class="mb-2">clients</h6>
+                            <h6 class="mb-0">{{ nombre_clients }}</h6>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class=" bg-white rounded d-flex align-items-center justify-content-between p-4">
+                        <i class="fa fa-chart-pie fa-3x "></i>
+                        <div class="ms-3">
+                            <h6 class="mb-2">Total Revenue</h6>
+                            <h6 class="mb-0">${{total_revenue}}</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                            <canvas id="my2Chart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                            <canvas id="myChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                            <canvas id="my3Chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                            <canvas id="my4Chart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                            <canvas id="my5Chart"></canvas>
+                    </div>
+                </div>
+           </div>
+       </div>
+
+    </body>
+    <div style="max-width: 300px;">
+        <canvas id="myChart" width="300" height="300"></canvas>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        const ctx = document.getElementById('myChart');
+    
+        new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Achats', 'Ventes'],
+                datasets: [{
+                    label: '',
+                    data: [{{ nombre_achats }}, {{ nombre_ventes }}], // Utilisation des variables Django
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)', // Rouge pour les achats
+                        'rgba(54, 162, 235, 0.2)', // Bleu pour les ventes
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)', // Rouge pour les achats
+                        'rgba(54, 162, 235, 1)', // Bleu pour les ventes
+                    ],
+                    borderWidth: 1
+                }]
+            },
+        });
+    </script>
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        const ctx2 = document.getElementById('my2Chart').getContext('2d');
+        const labels = {{ labels|safe }};
+        const ventesData = {
+            label: 'Nombre de ventes',
+            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1,
+            data: {{ ventes_par_mois|safe }},
+        };
+        const achatsData = {
+            label: 'Nombre d\'achats',
+            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+            borderColor: 'rgba(255, 99, 132, 1)',
+            borderWidth: 1,
+            data: {{ achats_par_mois|safe }},
+        };
+        const config = {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [ventesData, achatsData]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Quantité'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Mois'
+                        }
+                    }
+                }
+            }
+        };
+        const my2Chart = new Chart(ctx2, config);
+
+        
+    </script>
+    <div>
+       
+      </div>
+      
+      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+      <script>
+        document.addEventListener('DOMContentLoaded', function () {
+          // Récupérer les produits et leurs pourcentages depuis le contexte
+          const produits = [
+            {% for produit, pourcentage in resultats_de_revenue_par_produit %}
+              '{{ produit }}',
+            {% endfor %}
+          ];
+      
+          const pourcentages = [
+            {% for produit, pourcentage in resultats_de_revenue_par_produit %}
+              {{ pourcentage }},
+            {% endfor %}
+          ];
+      
+          // Définir une palette de couleurs pour les produits
+          const palette = [
+            'rgba(128, 128, 0, 0.5)', // Olive
+            'rgba(0, 128, 128, 0.5)', // Sarcelle
+            'rgba(255, 206, 86, 0.5)', // Jaune
+            'rgba(75, 192, 192, 0.5)', // Vert
+            'rgba(153, 102, 255, 0.5)', // Violet
+            'rgba(255, 159, 64, 0.5)', // Orange
+            'rgba(128, 0, 128, 0.5)', // Pourpre
+            'rgba(0, 0, 128, 0.5)', // Bleu foncé
+            'rgba(128, 0, 0, 0.5)', // Rouge foncé
+            'rgba(255, 99, 132, 0.5)', // Rouge
+            'rgba(54, 162, 235, 0.5)', // Bleu
+          ];
+      
+          // Préparer les données dans le format requis par Chart.js
+          const data = {
+            labels: produits,
+            datasets: [{
+              data: pourcentages,
+              backgroundColor: palette.slice(0, produits.length), // Utiliser les couleurs de la palette pour les produits
+              borderColor: palette.slice(0, produits.length), // Utiliser les couleurs de la palette pour les bordures
+              borderWidth: 1
+            }]
+          };
+      
+          // Initialisez l'objet de configuration pour le graphique doughnut
+          const config = {
+            type: 'doughnut',
+            data: data,
+            options: {
+              plugins: {
+                tooltip: {
+                  callbacks: {
+                    label: function (context) {
+                      let label = context.label || '';
+                      if (label) {
+                        label += ': ';
+                      }
+                      label += context.formattedValue + '%';
+                      return label;
+                    }
+                  }
+                }
+              }
+            }
+          };
+      
+          // Créez le graphique en utilisant Chart.js et l'élément canvas
+          const ctx3 = document.getElementById('my3Chart').getContext('2d');
+          new Chart(ctx3, config);
+        });
+      </script>
+        <div>
+            <canvas id="my4Chart"></canvas>
+          </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          
+          <script>
+            const ctx4 = document.getElementById('my4Chart');
+            new Chart(ctx4, {
+              type: 'line',
+              data: {
+                labels: {{ labels1|safe }},
+                datasets: [{
+                  label: 'Chiffre d\'affaires par mois',
+                  data: {{ ca_par_mois|safe }},
+                  backgroundColor:  'rgba(0, 128, 128, 0.5)',// Couleur de fond des barres
+                  borderColor: 'rgba(0, 128, 128, 0.5)', // Couleur de la bordure des barres
+                  borderWidth: 1
+                }]
+              },
+              options: {
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'CA'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Mois'
+                        }
+                    }
+                }
+              }
+            });
+          </script>
+          <div>
+            <canvas id="my5Chart"></canvas>
+          </div>
+          
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+          
+          <script>
+            const ctx5 = document.getElementById('my5Chart');
+          
+            // Données de prévision du chiffre d'affaires pour l'année suivante
+            const forecastData = {{ chiffre_affaires_previsionnel | safe }};
+          
+            new Chart(ctx5, {
+              type: 'line',
+              data: {
+                labels: {{ labels_mois_suivant | safe }},
+                datasets: [{
+                  label: 'Chiffre d\'affaires prévisionnel',
+                  data: forecastData,
+                  fill: false,
+                  backgroundColor:  'rgba(0, 128, 128, 0.5)',// Couleur de fond des barres
+                  borderColor: 'rgba(0, 128, 128, 0.5)', // Couleur de la bordure des barres
+                  tension: 0.1
+                }]
+              },
+              options: {
+                scales: {
+                  y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'CA'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Mois'
+                        }
+                    }
+                }
+              }
+            });
+          </script>                              
+      
+    </script>
+    
+      
+    
+{% endblock %}
