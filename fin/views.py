@@ -352,7 +352,7 @@ def import_data(request, fichier_id):
 def load_data(data, fichier_instance):
     for index, row in data.iterrows():
         # Créer une instance de Facture en associant l'instance de dataimport passée en paramètre
-        facture = Facture(fichier=fichier_instance, date=row['Date'], numero_facture=row['Numéro de facture'],
+        facture = Facture(fichier=fichier_instance, Date=row['Date'], numero_facture=row['Numéro de facture'],
                            nom_fournisseur=row['Nom du fournisseur'], nom_client=row['Nom du client'],
                            libelle=row['Libellé'], prix_unitaire=row['Prix unitaire'], total_ttc=row['Total TTC'],
                            total=row['Total'], quantite=row['Quantité'], tva=row['TVA'],

@@ -51,10 +51,11 @@ class dataimport(models.Model):
     def __str__(self): 
         return self.nom    
 
-       
+from datetime import datetime     
 class Facture(models.Model):
     id = models.AutoField(primary_key=True)
-    date = models.CharField(max_length=50)
+    Date = models.DateTimeField(default=datetime(2022, 1, 1, 0, 0, 0))
+    date=models.CharField(max_length=50,default=" ")
     fichier = models.ForeignKey(dataimport, on_delete=models.CASCADE,default="")
     numero_facture = models.CharField(max_length=100)
     nom_fournisseur = models.CharField(max_length=255)
