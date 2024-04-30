@@ -37,15 +37,14 @@ def transform(data):
      # Utilisez replace sur l'ensemble du DataFrame en spécifiant regex=True
     df = df.replace(r'[;*+_\'"=)(|{}!?#[\]].', '', regex=True)
     df['time'] = pd.to_datetime(df['time'])
-
     # Fusionner les colonnes 'Date' et 'Heure' en une seule colonne 'Date'
     df['Date1'] = df['date']+ ' ' + df['time'].dt.strftime('%H:%M:%S')
-    df.columns = df.columns.map(convertir_nom_colonne)
-    # Afficher les données avec les noms de colonnes convertis en majuscules
-    
-    df.sort_values(by='Date1')
-    print(df)
-    df = df[[ 'Date1', 'Numéro de facture', 'Nom du fournisseur','Nom du client' ,'Libellé', 'Prix unitaire', 
+    df.columns = df.columns.map(convertir_nom_colonne)# Afficher les données avec les noms de colonnes convertis en majuscules
+    #trier les date 
+    def custom_sort(date_str):
+        return int(date_str.split('/')[1]) 
+    df_sorted = df.sort_values(by='Date1', key=lambda x: x.map(custom_sort))
+    df =df_sorted[['Date1', 'Numéro de facture', 'Nom du fournisseur','Nom du client' ,'Libellé', 'Prix unitaire', 
              'Quantité', 'TVA', 'Total hors taxe', 'Total TTC']]  
     df['Catégorie'] = df.apply(determiner_categorie, axis=1)
     print(df)

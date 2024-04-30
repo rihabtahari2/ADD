@@ -389,6 +389,8 @@ def save_data(request):
 import matplotlib.pyplot as plt
 import io
 import base64
+from django.db.models.functions import ExtractMonth
+from django.db.models import Count
 from django.http import HttpResponse
 from django.template import loader
 from django.db.models import Sum
@@ -415,8 +417,11 @@ def dashboard(request):
             nombre_clients = len(set(facture.nom_client for facture in factures))
             nombre_achats = factures.filter(catéogorie='Achat').count()
             nombre_ventes = factures.filter(catéogorie='Vente').count()
+            Total1=nombre_ventes-nombre_achats
+            print(Total1)
             # Calculer le revenu total
             total_revenue = sum(Decimal(str(facture.total_ttc)) for facture in factures if facture.catéogorie== 'Vente') - sum(Decimal(str(facture.total_ttc)) for facture in factures if facture.catéogorie== 'Achat')
+            print(total_revenue)
             # Comptage du nombre de fois que chaque produit apparaît dans la facture
             total_produits = 0
             produits_counter = defaultdict(int)
@@ -472,27 +477,29 @@ def dashboard(request):
             labels_mois_suivant = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
             print(ca_par_mois_pré)
             print(labels_mois_suivant)
-            labels = []
-            ventes_par_mois = []
-            achats_par_mois = []
-            month_names = {
-                1: 'Janvier', 2: 'Février', 3: 'Mars', 4: 'Avril',
-                5: 'Mai', 6: 'Juin', 7: 'Juillet', 8: 'Août',
-                9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'
-            }
-            for i in range(1, 13):  # Boucler sur les 12 mois
-                # Filtrer les ventes par mois
-                ventes = factures.filter(date__icontains=f"{i:02d}/", catéogorie='Vente')
-                total_ventes = ventes.count()
-                ventes_par_mois.append(total_ventes)
-                # Filtrer les achats par mois
-                achats = factures.filter(date__icontains=f"{i:02d}/", catéogorie='Achat')
-                total_achats = achats.count()
-                achats_par_mois.append(total_achats)
-                # Ajouter le mois à la liste des labels
-                month_name = month_names.get(i)
-                labels.append(month_name)
-            
+            ventes_par_mois = {}
+            achats_par_mois = {}
+
+            # Parcourir les factures et traiter les dates
+            for facture in factures:
+                date_facture = datetime.strptime(facture.date, '%d/%m/%Y %H:%M:%S')
+                mois = date_facture.month
+                
+                # Mettre à jour les ventes par mois
+                if facture.catéogorie == 'Vente':
+                    ventes_par_mois[mois] = ventes_par_mois.get(mois, 0) + 1
+                
+                # Mettre à jour les achats par mois
+                elif facture.catéogorie== 'Achat':
+                    achats_par_mois[mois] = achats_par_mois.get(mois, 0) + 1
+            ventes_par_mois_list = [ventes_par_mois.get(mois, 0) for mois in range(1, 13)]
+            achats_par_mois_list = [achats_par_mois.get(mois, 0) for mois in range(1, 13)]
+
+            # Convertir les listes en chaînes JSON
+            ventes_json = json.dumps(ventes_par_mois_list)
+            achats_json = json.dumps(achats_par_mois_list)
+            print(ventes_json)
+            print(achats_json)
             context = {
                 'dataimport_instance': dataimport_instance,
                 'factures': factures,
@@ -502,9 +509,8 @@ def dashboard(request):
                 'nombre_clients': nombre_clients,
                 'nombre_achats': nombre_achats,
                 'nombre_ventes': nombre_ventes,
-                'labels': labels,
-                'ventes_par_mois': ventes_par_mois,
-                'achats_par_mois':achats_par_mois,
+                'ventes_par_mois': ventes_json,
+                'achats_par_mois':achats_json,
                 'total_revenue': total_revenue,
                 'resultats_de_revenue_par_produit': resultats_de_revenue_par_produit,
                 'ca_par_mois': ca_par_mois,

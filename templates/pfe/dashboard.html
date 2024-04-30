@@ -157,10 +157,14 @@
     </script>
     
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <script>
+        const ventesJson = '';
+        const achatsJson = '{{ achats_par_mois|safe }}';
+
+        // Utiliser les données dans votre graphique
         const ctx2 = document.getElementById('my2Chart').getContext('2d');
-        const labels = {{ labels|safe }};
+        const labels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
         const ventesData = {
             label: 'Nombre de ventes',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
@@ -200,9 +204,8 @@
             }
         };
         const my2Chart = new Chart(ctx2, config);
-
-        
     </script>
+
     <div>
        
       </div>
