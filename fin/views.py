@@ -462,6 +462,7 @@ def dashboard(request):
                 # Ajouter le nom du mois et son chiffre d'affaires correspondant à la liste
                 label_mois = f"{nom_mois.get(i)} "
                 labels1.append(label_mois)
+
             # Calculer la croissance historique moyenne
             croissance_moyenne = (total_revenue / nombre_factures) if nombre_factures > 0 else Decimal(0)
             print(croissance_moyenne)
@@ -500,6 +501,30 @@ def dashboard(request):
             achats_json = json.dumps(achats_par_mois_list)
             print(ventes_json)
             print(achats_json)
+            #//////////////////////////////
+            nombre_ventes = factures.filter(catéogorie='Vente')
+            print("Nombre de ventes récupérées :", nombre_ventes .count())
+            # Initialiser un dictionnaire pour stocker le chiffre d'affaires total par mois
+            chiffre_affaires_par_mois = defaultdict(Decimal)
+            # Parcourir toutes les ventes
+            for vente in nombre_ventes:
+                # Extraire le mois de la date de la vente
+                date_vente = datetime.strptime(vente.date, '%d/%m/%Y %H:%M:%S')
+                mois = date_vente.month
+
+                # Calculer le chiffre d'affaires de la vente (prix de vente x quantité vendue)
+                chiffre_affaire_vente = float(str(vente.prix_unitaire)) * vente.quantite
+
+                # Convertir le chiffre d'affaires de la vente en Decimal
+                chiffre_affaire_vente_decimal = Decimal(chiffre_affaire_vente)
+                print(chiffre_affaire_vente_decimal)
+                # Ajouter le chiffre d'affaires de la vente au chiffre d'affaires total du mois correspondant
+                chiffre_affaires_par_mois[mois] += chiffre_affaire_vente_decimal
+            # Convertir le dictionnaire en une liste de chiffres d'affaires totaux
+            chiffre_affaires_liste = [float(chiffre_affaires_par_mois[mois]) for mois in range(1, 13)]
+
+            # Afficher les chiffres d'affaires totaux par mois
+            print("Chiffre d'affaires total par mois :", chiffre_affaires_liste)
             context = {
                 'dataimport_instance': dataimport_instance,
                 'factures': factures,
@@ -519,6 +544,7 @@ def dashboard(request):
                 'labels_mois_suivant': labels_mois_suivant,
                 'fichier_id':fichier_id,
                 'dataimport_id':dataimport_id,
+                'chiffre_affaires_liste':chiffre_affaires_liste
             }
             return render(request, 'pfe/dashboard.html', context)
         except dataimport.DoesNotExist:

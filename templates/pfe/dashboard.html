@@ -112,7 +112,7 @@
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
-                            <canvas id="my4Chart"></canvas>
+                            <canvas id="my8Chart"></canvas>
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -141,7 +141,7 @@
                 labels: [ 'Ventes','Achats'],
                 datasets: [{
                     label: '',
-                    data: [{{ nombre_achats }}, {{ nombre_ventes }}], // Utilisation des variables Django
+                    data: [{{ nombre_ventes }}, {{ nombre_achats }}], // Utilisation des variables Django
                     backgroundColor: [
                         'rgba(255, 99, 132, 0.2)', // Rouge pour les achats
                         'rgba(54, 162, 235, 0.2)', // Bleu pour les ventes
@@ -279,52 +279,40 @@
           new Chart(ctx3, config);
         });
       </script>
-        <div>
-            <canvas id="my4Chart"></canvas>
-          </div>
-          
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-          
-          <script>
-            const ctx4 = document.getElementById('my4Chart');
-            new Chart(ctx4, {
-              type: 'line',
-              data: {
-                labels: {{ labels1|safe }},
-                datasets: [{
-                  label: 'Chiffre d\'affaires par mois',
-                  data: {{ ca_par_mois|safe }},
-                  backgroundColor:  'rgba(0, 128, 128, 0.5)',// Couleur de fond des barres
-                  borderColor: 'rgba(0, 128, 128, 0.5)', // Couleur de la bordure des barres
-                  borderWidth: 1
-                }]
-              },
-              options: {
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'CA'
-                        }
-                    },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Mois'
+      <canvas id="my8Chart"></canvas>
+
+      <script>
+          // Récupérer les données depuis Django
+          var ctx8 = document.getElementById('my8Chart').getContext('2d');
+
+            // Créer un graphique à lignes
+            var my8Chart = new Chart(ctx8, {
+                type: 'line',
+                data: {
+                    labels: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+                    datasets: [{
+                        label: 'Chiffre d\'affaires',
+                        data: [{{ chiffre_affaires_liste| join:', '  }}],  // Insérer les chiffres d'affaires totaux ici
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            beginAtZero: true
                         }
                     }
                 }
-              }
             });
-          </script>
-          <div>
-            <canvas id="my5Chart"></canvas>
-          </div>
+      </script>
+        <div>
+        <canvas id="my5Chart"></canvas>
+        </div>
           
-          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
           
-          <script>
+        <script>
             const ctx5 = document.getElementById('my5Chart');
           
             // Données de prévision du chiffre d'affaires pour l'année suivante
@@ -361,7 +349,7 @@
                 }
               }
             });
-          </script>                              
+        </script>                              
       
     </script>
     
