@@ -87,6 +87,7 @@
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
+                            <h6 class="mb-0">Nombre d'achats et de ventes par mois</h6>
                             <canvas id="my2Chart"></canvas>
                     </div>
                 </div>
@@ -94,6 +95,7 @@
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
+                            <h6 class="mb-0">Achat vs Vente</h6>
                             <canvas id="myChart"></canvas>
                     </div>
                 </div>
@@ -101,6 +103,7 @@
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
+                            <h6 class="mb-0">Produits</h6>
                             <canvas id="my3Chart"></canvas>
                     </div>
                 </div>
@@ -112,6 +115,7 @@
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
+                        <h6 class="mb-0">Évolution mensuelle du Chiffre d'Affaires</h6>
                             <canvas id="my8Chart"></canvas>
                     </div>
                 </div>
@@ -119,6 +123,7 @@
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
+                            <h6 class="mb-0">Prévision du Chiffre d'Affaires pour l'Année Suivante</h6>
                             <canvas id="my5Chart"></canvas>
                     </div>
                 </div>
@@ -300,57 +305,75 @@
                 options: {
                     scales: {
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'CA (en DT)'
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Mois'
+                            }
                         }
                     }
                 }
             });
-      </script>
-        <div>
-        <canvas id="my5Chart"></canvas>
-        </div>
-          
-        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-          
-        <script>
-            const ctx5 = document.getElementById('my5Chart');
-          
-            // Données de prévision du chiffre d'affaires pour l'année suivante
-            const forecastData = {{ chiffre_affaires_previsionnel | safe }};
-          
-            new Chart(ctx5, {
-              type: 'line',
-              data: {
-                labels: {{ labels_mois_suivant | safe }},
-                datasets: [{
-                  label: 'Chiffre d\'affaires prévisionnel',
-                  data: forecastData,
-                  fill: false,
-                  backgroundColor:  'rgba(0, 128, 128, 0.5)',// Couleur de fond des barres
-                  borderColor: 'rgba(0, 128, 128, 0.5)', // Couleur de la bordure des barres
-                  tension: 0.1
-                }]
-              },
-              options: {
-                scales: {
-                  y: {
-                        beginAtZero: true,
-                        title: {
-                            display: true,
-                            text: 'CA'
-                        }
+      </script> 
+      <canvas id="my5Chart"></canvas>                         
+
+      <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                var ctx5 = document.getElementById('my5Chart').getContext('2d');
+        
+                // Récupérer les données de chiffre d'affaires prévisionnel depuis Django
+                var chiffreAffairePrevisionnel = [{{ chiffre_affaire_previsionnel|join:', ' }}];
+        
+                var my5Chart = new Chart(ctx5, {
+                    type: 'line',
+                    data: {
+                        labels: ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'],
+                        datasets: [{
+                            label: 'Chiffre d\'affaires prévisionnel',
+                            data: chiffreAffairePrevisionnel,
+                            borderColor: 'rgb(75, 192, 192)',
+                            
+                        }]
                     },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Mois'
+                    options: {
+                        plugins: {
+                            title: {
+                                display: false
+                            },
+                            customTitle: {
+                                display: true,
+                                text: 'Prévision du Chiffre d\'Affaires pour l\'Année Suivante',
+                                font: {
+                                    size: 18,
+                                    weight: 'bold'
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                title: {
+                                    display: true,
+                                    text: 'CA (en DT)'
+                                }
+                            },
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Mois'
+                                }
+                            }
                         }
                     }
-                }
-              }
+                });
             });
-        </script>                              
-      
+        </script>
     </script>
     
       
