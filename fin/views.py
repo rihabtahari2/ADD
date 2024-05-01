@@ -244,7 +244,6 @@ def add_assistant(request):
             email.send()
 
             return redirect('assistant')
-
     context = {'form': form, 'user_is_expert': user_is_expert}
     return render(request, 'pfe/add_assistant.html', context)
 @expert_required
@@ -529,7 +528,29 @@ def dashboard(request):
                 print(f"Mois {mois}: {chiffre_affaire_previsionnel}")
             chiffre_affaire_previsionnel = chiffre_affaires_previsionnel_annee_suivante
             #*************************************************************************************************
+            #""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+            chiffre_affaires_par_produit_par_mois = defaultdict(lambda: defaultdict(Decimal))
+
+            # Parcourir toutes les ventes
+            for vente in ventes:
+                # Extraire le mois de la date de la vente
+                date_vente = datetime.strptime(vente.date, '%d/%m/%Y %H:%M:%S')
+                mois = date_vente.month
+
+                # Calculer le chiffre d'affaires de la vente pour ce produit (prix de vente x quantité vendue)
+                chiffre_affaire_produit = Decimal(str(vente.prix_unitaire)) * vente.quantite
+
+                # Ajouter le chiffre d'affaires de la vente pour ce produit au chiffre d'affaires total du mois correspondant
+                chiffre_affaires_par_produit_par_mois[mois][vente.libelle] += chiffre_affaire_produit
+
+            # Afficher le chiffre d'affaires total par produit pour chaque mois
+            for mois, chiffre_affaires_par_produit in chiffre_affaires_par_produit_par_mois.items():
+                print(f"Mois {mois}:")
+                for produit, chiffre_affaire_total in chiffre_affaires_par_produit.items():
+                    print(f"- Produit {produit}: {chiffre_affaire_total}")
             context = {
+                'chiffre_affaire_total':chiffre_affaire_total,
+                'produit':produit,
                 'dataimport_instance': dataimport_instance,
                 'factures': factures,
                 'nombre_factures': nombre_factures,
@@ -549,7 +570,8 @@ def dashboard(request):
                 'fichier_id':fichier_id,
                 'dataimport_id':dataimport_id,
                 'chiffre_affaires_liste':chiffre_affaires_liste,
-                'chiffre_affaire_previsionnel':chiffre_affaire_previsionnel
+                'chiffre_affaire_previsionnel':chiffre_affaire_previsionnel,
+                
             }
             return render(request, 'pfe/dashboard.html', context)
         except dataimport.DoesNotExist:
@@ -585,3 +607,56 @@ def import_file(request):
     else:
         # Si aucun fichier n'a été reçu, retourner une réponse JSON indiquant l'erreur
         return JsonResponse({'success': False, 'error': 'Aucun fichier n\'a été reçu.'})
+
+
+# views.py
+from django.template.loader import render_to_string
+import csv
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+
+def export_csv(request, dataimport_id):
+    # Récupérer les données à exporter en CSV
+    fichiers = dataimport.objects.get(pk=dataimport_id)
+    factures = Facture.objects.filter(fichier=fichiers)
+
+    # Préparer les données au format CSV
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="export.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Date', 'Numero de Facture', 'Nom du Fournisseur', 'Nom du Client', 'Libelle', 'Prix Unitaire', 'Quantite', 'TVA', 'Total HT', 'Total TTC', 'Catégorie'])
+
+    for facture in factures:
+        writer.writerow([facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.catéogorie])
+
+    return response
+def export_pdf(request):
+    dataimport_id = request.GET.get('dataimport_id')  # Récupérer dataimport_id depuis la requête GET
+    if dataimport_id:
+        fichiers = dataimport.objects.get(pk=dataimport_id)
+        factures = Facture.objects.filter(fichier=fichiers)
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="export.pdf"'
+        
+        data = [[facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.categorie] for facture in factures]
+
+        pdf = SimpleDocTemplate(response, pagesize=letter)
+        table = Table(data)
+        style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+                            ('GRID', (0, 0), (-1, -1), 1, colors.black)])
+
+        table.setStyle(style)
+        pdf.build([table])
+        
+        return response
+    else:
+        # Gérer le cas où dataimport_id n'est pas fourni
+        return HttpResponse("Dataimport ID is missing.", status=400)
+   

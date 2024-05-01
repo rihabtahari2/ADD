@@ -30,6 +30,8 @@ urlpatterns = [
     path('test/import_file/',views.import_file, name='import_file'),
     path('save_data/',views.save_data, name='save_data'),
 
+    path('export/pdf/', views.export_pdf, name='export_pdf'),
+    path('export/csv/', views.export_csv, name='export_csv'),
 
     path('ex/',views.expl, name='l'),
     path('exx/',views.expl1, name='expl'),

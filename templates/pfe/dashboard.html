@@ -40,6 +40,29 @@
             <a href="{% url 'données' fichier_id=dataimport_id %}"class="data-link"> 
                 <i class="fas fa-database icon"></i> Voir ses Données</a>
         </div> 
+        <!-- Ajoutez le bouton Export -->
+        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exportModal">
+            Exporter
+        </button>
+        
+        <!-- Modèle de la fenêtre modale -->
+        <div class="modal fade" id="exportModal" tabindex="-1" role="dialog" aria-labelledby="exportModalLabel" aria-hidden="true">
+            <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Exporter les données</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+                <div class="modal-body">
+                <!-- Boutons pour exporter en PDF et en Excel -->
+                    <a href="{% url 'export_pdf' %}?dataimport_id={{ dataimport_instance.id }}" class="btn btn-primary">Export en PDF</a>
+                    <a href="{% url 'export_csv' %}?dataimport_id={{ dataimport_instance.id }}" class="btn btn-success">Export en Excel</a>
+                </div>
+            </div>
+            </div>
+        </div>
         <div class="container-fluid pt-4 px-4">
             <div class="row g-4">
                 <div class="col-sm-6 col-xl-3">
@@ -129,7 +152,18 @@
                 </div>
            </div>
        </div>
-
+       <div class="container-fluid pt-4 px-4">
+        <div class="row g-4">
+            <div class="col-md-6">
+                <div class="bg-white rounded text-center">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                    </div>
+                    <h6 class="mb-0">gggg</h6>
+                        <canvas id="my9Chart"></canvas>
+                </div>
+            </div>
+       </div>
+   </div>
     </body>
     <div style="max-width: 300px;">
         <canvas id="myChart" width="300" height="300"></canvas>
@@ -374,7 +408,89 @@
                 });
             });
         </script>
+        <div style="width: 800px; height: 400px;">
+            <canvas id="my9Chart"></canvas>
+        </div>
+        
+        <script>
+            var ctx9 = document.getElementById('my9Chart').getContext('2d');
+        
+            var labels9 = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+            var data = {
+                labels: labels9,
+                datasets: []
+            };
+        
+            // Définir une fonction pour générer une couleur aléatoire
+            function getRandomColor() {
+                var letters = '0123456789ABCDEF';
+                var color = '#';
+                for (var i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+        
+            // Créer un objet pour stocker les couleurs des produits
+            var produitColors = {};
+        
+            // Parcourir chaque mois et chaque produit pour récupérer les données
+            {% for mois, chiffre_affaires_par_produit in chiffre_affaires_par_produit_par_mois.items %}
+                {% for produit, chiffre_affaire_total in chiffre_affaires_par_produit.items %}
+                    // Vérifier si la couleur du produit est déjà définie
+                    if (!produitColors[produit]) {
+                        // Générer une couleur aléatoire et l'associer au produit
+                        produitColors[produit] = getRandomColor();
+                    }
+        
+                    // Ajouter les données du produit au dataset
+                    var datasetIndex = data.datasets.findIndex(dataset => dataset.label === produit);
+                    if (datasetIndex === -1) {
+                        // Si le dataset pour ce produit n'existe pas encore, le créer
+                        data.datasets.push({
+                            label: produit,
+                            data: [],
+                            fill: true,
+                            backgroundColor: produitColors[produit],  // Utiliser la couleur associée au produit
+                            borderColor: produitColors[produit],  // Utiliser la même couleur pour la bordure
+                            borderWidth: 1,
+                            stack: 'Stack 1'  // Ajouter cette ligne pour empiler les datasets
+                        });
+                        datasetIndex = data.datasets.length - 1;
+                    }
+                    data.datasets[datasetIndex].data.push({{ chiffre_affaire_total }});
+                {% endfor %}
+            {% endfor %}
+        
+            // Créer le diagramme à aire empilée
+            var my9Chart = new Chart(ctx9, {
+                type: 'line',
+                data: data,
+                options: {
+                    scales: {
+                        y: {
+                            stacked: true,  // Empiler les valeurs sur l'axe y
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Chiffre d\'Affaires (en DT)'
+                            }
+                        },
+                        x: {
+                            stacked: true,  // Empiler les valeurs sur l'axe x
+                            title: {
+                                display: true,
+                                text: 'Mois'
+                            }
+                        }
+                    }
+                }
+            });
+        </script>
+    
+        
     </script>
+   
     
       
     
