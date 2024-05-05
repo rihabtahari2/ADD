@@ -431,48 +431,7 @@ def dashboard(request):
                     total_produits += 1
 
             resultats_de_revenue_par_produit = [(produit, (count / total_produits) * 100) for produit, count in produits_counter.items()]
-            # Afficher le CA par mois 
-            ca_par_mois = []
-            labels1 = []
-
-            nom_mois = {
-                1: 'Janvier', 2: 'Février', 3: 'Mars', 4: 'Avril',
-                5: 'Mai', 6: 'Juin', 7: 'Juillet', 8: 'Août',
-                9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'
-            }
-
-            for i in range(1, 13):
-                ventes_mois = Decimal(0)
-                achats_mois = Decimal(0)
-                
-                # Filtrer les factures pour le mois en cours
-                factures_mois = factures.filter(date__icontains=f"{i:02d}/")
-                
-                for facture in factures_mois:
-                    if facture.catéogorie == 'Vente':
-                        ventes_mois += Decimal(str(facture.total_ttc))
-                    elif facture.catéogorie == 'Achat':
-                        achats_mois += Decimal(str(facture.total_ttc))
-                
-                # Calculer le chiffre d'affaires pour le mois en cours
-                ca_mois = ventes_mois - achats_mois
-                ca_par_moiss = f" {ca_mois}"
-                ca_par_mois.append(ca_par_moiss)
-                # Ajouter le nom du mois et son chiffre d'affaires correspondant à la liste
-                label_mois = f"{nom_mois.get(i)} "
-                labels1.append(label_mois)
-
-            # Calculer la croissance historique moyenne
-            croissance_moyenne = (total_revenue / nombre_factures) if nombre_factures > 0 else Decimal(0)
-            
-            # Prédire le chiffre d'affaires pour l'année suivante
-            chiffre_affaires_previsionnel = []
-            for mois in range(1, 13):
-                # Appliquer la croissance moyenne pour prédire le chiffre d'affaires pour chaque mois
-                chiffre_affaires_previsionnel_mois = total_revenue + (croissance_moyenne * mois)
-                ca_par_mois_pré = f" {chiffre_affaires_previsionnel_mois}"
-              
-                chiffre_affaires_previsionnel.append(ca_par_mois_pré)
+           
             # Créer les étiquettes pour les mois de l'année suivante
             labels_mois_suivant = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
             ventes_par_mois = {}
@@ -563,9 +522,6 @@ def dashboard(request):
                 'achats_par_mois':achats_json,
                 'total_revenue': total_revenue,
                 'resultats_de_revenue_par_produit': resultats_de_revenue_par_produit,
-                'ca_par_mois': ca_par_mois,
-                'labels1': labels1,
-                'chiffre_affaires_previsionnel': chiffre_affaires_previsionnel,
                 'labels_mois_suivant': labels_mois_suivant,
                 'fichier_id':fichier_id,
                 'dataimport_id':dataimport_id,
@@ -612,51 +568,114 @@ def import_file(request):
 # views.py
 from django.template.loader import render_to_string
 import csv
+from reportlab.lib.units import inch
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+def export_csv(request):
+    dataimport_id = request.GET.get('dataimport_id')
+    if dataimport_id:
+        # Récupérer les données à exporter en CSV
+        fichiers = dataimport.objects.get(pk=dataimport_id)
+        factures_achat = Facture.objects.filter(fichier=fichiers, catéogorie='Achat')
+        factures_vente = Facture.objects.filter(fichier=fichiers, catéogorie='Vente')
 
-def export_csv(request, dataimport_id):
-    # Récupérer les données à exporter en CSV
-    fichiers = dataimport.objects.get(pk=dataimport_id)
-    factures = Facture.objects.filter(fichier=fichiers)
+        # Préparer les données pour le fichier CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="export.csv"'
 
-    # Préparer les données au format CSV
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="export.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Date', 'Numero de Facture', 'Nom du Fournisseur', 'Nom du Client', 'Libelle', 'Prix Unitaire', 'Quantite', 'TVA', 'Total HT', 'Total TTC', 'Catégorie'])
 
-    writer = csv.writer(response)
-    writer.writerow(['Date', 'Numero de Facture', 'Nom du Fournisseur', 'Nom du Client', 'Libelle', 'Prix Unitaire', 'Quantite', 'TVA', 'Total HT', 'Total TTC', 'Catégorie'])
+        for facture in factures_achat:
+            writer.writerow([facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.catéogorie])
 
-    for facture in factures:
-        writer.writerow([facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.catéogorie])
+        # Ajouter une ligne vide pour séparer les deux types de factures
+        writer.writerow([])
 
-    return response
+        for facture in factures_vente:
+            writer.writerow([facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.catéogorie])
+
+        return response
+    else:
+        # Gérer le cas où dataimport_id est manquant
+        return HttpResponse("ID de dataimport manquant.", status=400)
+from reportlab.platypus import Spacer
+
 def export_pdf(request):
     dataimport_id = request.GET.get('dataimport_id')  # Récupérer dataimport_id depuis la requête GET
     if dataimport_id:
         fichiers = dataimport.objects.get(pk=dataimport_id)
-        factures = Facture.objects.filter(fichier=fichiers)
-        response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="export.pdf"'
+        factures_achat = Facture.objects.filter(fichier=fichiers, catéogorie='Achat')
+        factures_vente = Facture.objects.filter(fichier=fichiers, catéogorie='Vente')
         
-        data = [[facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.categorie] for facture in factures]
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = 'attachment; filename="rapport_financiére.pdf"'
 
+        # Titre du PDF
+        title_text = "Rapport Financier annuelle "
+        title_style = getSampleStyleSheet()['Title']
+        title = Paragraph(title_text, title_style)
+
+        # Création du PDF
         pdf = SimpleDocTemplate(response, pagesize=letter)
-        table = Table(data)
-        style = TableStyle([('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-                            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
-                            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
-                            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
-                            ('GRID', (0, 0), (-1, -1), 1, colors.black)])
+        elements = [title]
 
-        table.setStyle(style)
-        pdf.build([table])
+        # Calcul du revenu total
+        total_revenue = sum(Decimal(str(facture.total_ttc)) for facture in factures_vente) - sum(Decimal(str(facture.total_ttc)) for facture in factures_achat)
+
+        # Ajout du paragraphe du revenu total
+        total_revenue_text = f"Le revenu total du client est : {total_revenue} DT"
+        total_revenue_style = getSampleStyleSheet()['Heading2']
+        total_revenue_paragraph = Paragraph(total_revenue_text, total_revenue_style)
+        elements.append(total_revenue_paragraph)
+
+        # Données et titres pour le tableau des factures d'achat
+        title_achat_text = "Factures d'Achat"
+        title_achat_style = getSampleStyleSheet()['Heading1']
+        title_achat = Paragraph(title_achat_text, title_achat_style)
+        
+        data_achat = [['Date', 'Num Facture', 'Fournisseur', 'Libelle', 'Prix Unitaire', 'Quantite', 'Total TTC']]
+        data_achat += [[facture.date, facture.numero_facture, facture.nom_fournisseur, facture.libelle, facture.prix_unitaire, facture.quantite, facture.total_ttc] for facture in factures_achat]
+        style_title = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+            ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black)
+        ])
+        table_achat = Table(data_achat)
+        table_achat.setStyle(style_title)
+        
+        # Ajouter le titre et le tableau des factures d'achat
+        elements.append(title_achat)
+        elements.append(table_achat)
+        elements.append(Spacer(1, 20))  # Ajouter de l'espace entre les tableaux
+
+        # Données et titres pour le tableau des factures de vente
+        title_vente_text = "Factures de Vente"
+        title_vente_style = getSampleStyleSheet()['Heading1']
+        title_vente = Paragraph(title_vente_text, title_vente_style)
+
+        data_vente = [['Date', 'Num Facture', 'Client', 'Libelle', 'Prix Unitaire', 'Quantite', 'Total TTC']]
+        data_vente += [[facture.date, facture.numero_facture, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.total_ttc] for facture in factures_vente]
+
+        table_vente = Table(data_vente)
+        table_vente.setStyle(style_title)
+
+        # Ajouter le titre et le tableau des factures de vente
+        elements.append(title_vente)
+        elements.append(table_vente)
+
+        # Construction du document PDF
+        pdf.build(elements)
         
         return response
     else:
-        # Gérer le cas où dataimport_id n'est pas fourni
         return HttpResponse("Dataimport ID is missing.", status=400)
+
+
    
