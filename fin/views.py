@@ -279,17 +279,22 @@ def add_assistant(request):
     context = {'form': form, 'user_is_expert': user_is_expert}
     return render(request, 'pfe/add_assistant.html', context)
 @expert_required
-def updateassistant(request, pk):
+def update_assistant(request, pk):
     user_is_expert = request.user.groups.filter(name='Experts').exists()
-    user = User.objects.get(id=pk)
+    # Récupérer l'assistant à partir de son ID
+    assistant = User.objects.get(id=pk)
+    
     if request.method == 'POST':
-        form = CreateUserform(request.POST, instance=user)
+        # Mettre à jour les informations de l'assistant avec les données du formulaire
+        form = CreateUserform(request.POST, instance=assistant)
         if form.is_valid():
             form.save()
-            return redirect('home')  # Redirigez vers la page d'accueil ou une autre vue
+            return redirect('assistant')  # Rediriger vers la liste des assistants après la mise à jour
     else:
-        form = CreateUserform(instance=user)
-    return render(request, 'pfe/add_assistant.html', {'form': form,'user_is_expert': user_is_expert})
+        form = CreateUserform(instance=assistant)  # Pré-remplir le formulaire avec les informations actuelles de l'assistant
+    
+    context = {'form': form, 'user_is_expert': user_is_expert}
+    return render(request, 'pfe/update_assistant.html', context)
 @ login_required(login_url='singin')
 def home_page(request):
     # Vérifier si l'utilisateur appartient au groupe "Experts"
