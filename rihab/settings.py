@@ -32,7 +32,7 @@ EMAIL_USE_TLS = True  # ou False selon votre configuration
 EMAIL_HOST_USER = 'rihabtahari26@gmail.com'
 EMAIL_HOST_PASSWORD = 'hbrj wssv vfeu cmdp'
 ALLOWED_HOSTS = []
-
+APPEND_SLASH = False
 
 # Application definition
 

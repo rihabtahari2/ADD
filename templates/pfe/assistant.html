@@ -209,20 +209,20 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for utilisateur in utilisateurs_info %}
+                        {% for assistant in assistants %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
-                                <td>{{ utilisateur.username }}</td>
-                                <td>{{ utilisateur.email }}</td>
-                                <td>{{ utilisateur.date_creation }}</td>
-                                <td>{{utilisateur.last_login}}</td>
+                                <td>{{ assistant.user.username}}</td>
+                                <td>{{ assistant.user.email }}</td>
+                                <td>{{ assistant.user.date_joined }}</td>
+                                <td>{{ assistant.user.last_login}}</td>
                                <!-- <td>
                                 <a class="btn btn-primary" href="{% url 'client_assistant' pk=user.pk %}">Affecter</a> 
                                 </td>-->
                                 <td>    
                                     <a href="#" class="view" title="View" data-toggle="tooltip"><i class="material-icons">&#xE417;</i></a>
                                     <a href="{% url 'update_assistant' user.id %}" class="edit" title="Edit" data-toggle="tooltip"><i class="material-icons">&#xE254;</i></a>
-                                    <a class="delete" title="Delete" data-toggle="tooltip"onclick="showConfirmationModal('{{ user.username }}', {{ user.pk }} )"><i class="material-icons">&#xE872;</i></a>
+                                    <a class="delete" title="Delete" data-toggle="tooltip"onclick="showConfirmationModal('{{ assistant.user.username }}', {{ assistant.user.pk }})"><i class="material-icons">&#xE872;</i></a>
                                 </td>             
                            </tr>
                            <script>
@@ -232,7 +232,7 @@
 
                                 // Mettre à jour l'action du formulaire avec l'URL de suppression de l'utilisateur
                                 var deleteForm = document.getElementById('deleteUserForm');
-                                deleteForm.action = '/delete_user/' + userId;
+                                deleteForm.action = '/delete_user/' + userId + '/';;
 
                                 // Affichez la modal de confirmation
                                 $('#confirmationModal').modal('show');

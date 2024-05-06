@@ -68,6 +68,7 @@ def register(request):
       form=CreateUserform(request.POST)
       if form.is_valid():
           user=form.save()
+          ExpertProfile.objects.create(user=user)
           username = form.cleaned_data.get('username')
           group = Group.objects.get(name='Experts')
           user.groups.add(group)
@@ -129,31 +130,54 @@ def navbar1 (request):
     return render(request,'index1.html')
 @expert_required
 def list_client(request):
-     # Vérifier si l'utilisateur appartient au groupe "Expert"
+    # Vérifiez si l'utilisateur appartient au groupe "Expert"
     user_is_expert = request.user.groups.filter(name='Experts').exists()
-    clients = client.objects.all()
-    clients = client.objects.order_by('clientId')
-    paginator = Paginator(clients, 8)  # Paginer les clients avec 8 clients par page
+    
+    # Si l'utilisateur est un expert, récupérez uniquement les clients associés à son profil
+    if user_is_expert:
+        expert_profile = ExpertProfile.objects.get(user=request.user)
+        clients = client.objects.filter(Expertprofile=expert_profile)
+    else:
+        # Si l'utilisateur n'est pas un expert, récupérez tous les clients
+        clients = client.objects.all()
+
+    # Paginez les clients avec 8 clients par page
+    paginator = Paginator(clients, 8)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'pfe/client.html', {'page_obj': page_obj, 'clients': page_obj.object_list,'user_is_expert': user_is_expert})
+    
+    return render(request, 'pfe/client.html', {'page_obj': page_obj, 'clients': page_obj.object_list, 'user_is_expert': user_is_expert})
 @expert_required
 def add_client(request):
-     # Vérifier si l'utilisateur appartient au groupe "Expert"
+    # Vérifiez si l'utilisateur appartient au groupe "Expert"
     user_is_expert = request.user.groups.filter(name='Experts').exists()
     form = ClientForm()
     if request.method == 'POST':
         form = ClientForm(request.POST)  
         if form.is_valid():
-            Client=client(
-                clientName=form.cleaned_data['clientName'],
-                clientAdresse=form.cleaned_data['clientAdresse'],
-                clientActivity=form.cleaned_data['clientActivity'],
-                id_user=form.cleaned_data['id_user']
-            )
-            Client.save()
+            # Créez une instance du client, mais ne la sauvegardez pas encore dans la base de données
+            client_instance = form.save(commit=False)
+            
+            # Récupérez l'objet ExpertProfile associé à l'utilisateur actuel
+            expert_profile = ExpertProfile.objects.get(user=request.user)
+            
+            # Associez le client à l'ExpertProfile
+            client_instance.Expertprofile = expert_profile
+            
+            # Récupérez l'assistant sélectionné dans le formulaire
+            assistant_username = form.cleaned_data['id_user']
+            
+            # Récupérez l'utilisateur correspondant à l'assistant sélectionné
+            assistant_user = User.objects.get(username=assistant_username)
+            
+            # Associez l'utilisateur de l'assistant au client
+            client_instance.id_user = assistant_user
+            
+            # Sauvegardez le client dans la base de données
+            client_instance.save()
+            
             return redirect('client')
-    context = {'form': form,'user_is_expert': user_is_expert}
+    context = {'form': form, 'user_is_expert': user_is_expert}
     return render(request, 'pfe/add_client.html', context)
 @expert_required
 def update_client(request, pk):
@@ -169,6 +193,13 @@ def update_client(request, pk):
     context={'form': form,'user_is_expert': user_is_expert}
     return render(request, 'pfe/add_client.html', context)
 
+def delete_user(request, user_id):
+    user = get_object_or_404(User, id=user_id)
+    if request.method == 'POST':
+        user.delete()
+        return redirect('assistant') # Redirection vers la page des assistants après la suppression
+    else:
+        return HttpResponse(status=405)
 def delete_client(request,pk):
     if request.method == 'POST':
         client_instance = client.objects.get(clientId=pk)
@@ -192,22 +223,15 @@ def expl1 (request):
 @expert_required 
 def list_assistant(request):
     user_is_expert = request.user.groups.filter(name='Experts').exists()
-    assistants_group = Group.objects.get(name='Assistants')
-    utilisateurs = User.objects.filter(groups=assistants_group)
-    utilisateurs_info = [] 
-    for utilisateur in utilisateurs:
-        info_utilisateur = {
-            'username': utilisateur.username,
-            'email': utilisateur.email,
-            'date_creation': utilisateur.date_joined.strftime('%Y-%m-%d %H:%M:%S'),
-            'last_login': utilisateur.last_login.strftime('%Y-%m-%d %H:%M:%S') if utilisateur.last_login else None  
-        }
-        utilisateurs_info.append(info_utilisateur)
-
-    paginator = Paginator( utilisateurs_info, 9)  
+    expert_profile = ExpertProfile.objects.get(user=request.user)
+    assistants = AssistantProfile.objects.filter(expert_profile=expert_profile)
+    paginator = Paginator(assistants, 9)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    return render(request, 'pfe/assistant.html', {'page_obj': page_obj, 'utilisateurs_info': page_obj.object_list,'user_is_expert': user_is_expert})
+
+    
+    context = {'page_obj': page_obj,'assistants': assistants, 'user_is_expert': user_is_expert}
+    return render(request, 'pfe/assistant.html', context)
 from django.core.mail import EmailMessage
 import smtplib
 
@@ -220,6 +244,14 @@ def add_assistant(request):
         form = CreateUserform(request.POST)
         if form.is_valid():
             user = form.save()
+            assistant_profile = AssistantProfile.objects.create(user=user)
+
+            # Récupérer l'expert correspondant à l'utilisateur connecté
+            expert_profile = ExpertProfile.objects.get(user=request.user)
+
+            # Associer l'assistant à son expert
+            assistant_profile.expert_profile = expert_profile
+            assistant_profile.save()
             username = form.cleaned_data.get('username')
             group = Group.objects.get(name='Assistants')
             user.groups.add(group)
@@ -260,7 +292,7 @@ def updateassistant(request, pk):
     return render(request, 'pfe/add_assistant.html', {'form': form,'user_is_expert': user_is_expert})
 @ login_required(login_url='singin')
 def home_page(request):
-    # Vérifier si l'utilisateur appartient au groupe "Expert"
+    # Vérifier si l'utilisateur appartient au groupe "Experts"
     user_is_expert = request.user.groups.filter(name='Experts').exists()
 
     # Votre logique existante pour le traitement du formulaire et la récupération des fichiers
@@ -271,7 +303,16 @@ def home_page(request):
         if form.is_valid():
             selected_client_name = form.cleaned_data['client']
             selected_client = client.objects.get(clientName=selected_client_name)
+            
+            # Créez une instance de dataimport, mais ne la sauvegardez pas encore dans la base de données
             dataimport_instance = form.save(commit=False)
+            
+            # Récupérez le profil de l'utilisateur actuel
+            if user_is_expert:
+                dataimport_instance.Expertprofile = ExpertProfile.objects.get(user=request.user)
+            else:
+                dataimport_instance.Assistantprofile = AssistantProfile.objects.get(user=request.user)
+            
             dataimport_instance.client = selected_client
             dataimport_instance.save()
 
@@ -282,9 +323,13 @@ def home_page(request):
             load(transformed_data, dataimport_instance)
             return redirect('données', fichier_id=fichier_id)  
 
-    fichiers = dataimport.objects.all()
-    context = {'form': form, 'fichiers': fichiers, 'fichier_id': fichier_id, 'user_is_expert': user_is_expert}
+    # Récupérez les dataimport associés au profil de l'utilisateur actuel
+    if user_is_expert:
+        fichiers = dataimport.objects.filter(Expertprofile__user=request.user)
+    else:
+        fichiers = dataimport.objects.filter(Assistantprofile__user=request.user)
 
+    context = {'form': form, 'fichiers': fichiers, 'fichier_id': fichier_id, 'user_is_expert': user_is_expert}
     return render(request, 'pfe/home.html', context)
 
 

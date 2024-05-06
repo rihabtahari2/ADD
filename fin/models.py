@@ -3,6 +3,16 @@ from django.contrib.auth.models import User
 from django.contrib.auth.models import AbstractUser
 from django.core.exceptions import ValidationError
 
+class ExpertProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    def __str__(self):
+        return self.user +'_ExpertProfile_'
+
+class AssistantProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    expert_profile = models.ForeignKey(ExpertProfile, on_delete=models.CASCADE, null=True)
+    def __str__(self):
+        return self.user + '_AssistantProfile_'
 
 class Données(models.Model):
     Nom = models.CharField(max_length=100)
@@ -24,6 +34,7 @@ class client(models.Model):
     clientActivity=models.CharField(max_length=500, default=' ')
     contact = models.EmailField(max_length=254,default='example@example.com')
     id_user = models.ForeignKey(User, on_delete=models.CASCADE, null=True)
+    Expertprofile=models.ForeignKey(ExpertProfile,on_delete=models.CASCADE, null=True)
     def __str__(self): 
         return self.clientName
 # Create your models here.
@@ -42,12 +53,14 @@ class Person(models.Model):
     date = models.CharField(max_length=100)
     def __str__(self):
         return self.name
-
+    
 class dataimport(models.Model):
     Id=models.AutoField(primary_key=True)
     nom= models.CharField(max_length=100,default=" ")
     description= models.CharField(max_length=700,default=" ")
     client = models.ForeignKey(client, on_delete=models.CASCADE,default=0 )
+    Expertprofile=models.ForeignKey(ExpertProfile,on_delete=models.CASCADE, null=True)
+    Assistantprofile=models.ForeignKey(AssistantProfile,on_delete=models.CASCADE, null=True)
     def __str__(self): 
         return self.nom    
 
