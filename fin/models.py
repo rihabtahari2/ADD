@@ -100,7 +100,7 @@ class Dim_Temps(models.Model):
     mois = models.CharField(max_length=2)
     annee = models.IntegerField()
     def __str__(self):
-        return self.annee
+        return self. id_Tempss
     
 class Dim_Client(models.Model):
     id_client = models.AutoField(primary_key=True)

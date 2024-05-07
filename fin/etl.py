@@ -53,6 +53,44 @@ def transform(data):
 # Fonction de chargement
 def load(data, dataimport_instance):
     for index, row in data.iterrows():
+        produit, _ = Dim_Produit.objects.get_or_create(
+            libelle=row['Libellé'],
+            defaults={'prix_unitaire': row['Prix unitaire']}
+        )
+
+        # Remplir Dim_Temps
+        date_facture = datetime.strptime(row['Date1'], '%d/%m/%Y %H:%M:%S')
+        # Créer une instance de DimTemps
+        temps, _ = Dim_Temps.objects.get_or_create(
+            id_Tempss=date_facture,
+            jour=date_facture.day,
+            mois=date_facture.month,
+            annee=date_facture.year
+        )
+
+        # Remplir Dim_Client
+        if pd.notna(row['Nom du client']):
+            # Créer une instance de DimClient
+            client, _ = Dim_Client.objects.get_or_create(
+                nom_client=row['Nom du client']
+            )
+            # les jointure
+            # Créer une instance de fait_vente en utilisant les instances récupérées
+            nouvelle_vente = fait_vente.objects.create(
+                id_client=client,
+                id_produit=produit,
+                id_temps=temps,
+                TVA=row['TVA'],
+                total_ttc=row['Total TTC'],
+                total_hors_taxe=row['Total hors taxe'],
+                quantite=row['Quantité']
+            )
+        # Remplir Dim_Fournisseur
+        if pd.notna(row['Nom du fournisseur']):
+            # Créer une instance de DimFournisseur
+            fournisseur, _ = Dim_Fournisseur.objects.get_or_create(
+                nom_fournisseur=row['Nom du fournisseur']
+            )
         facture = Facture(fichier= dataimport_instance ,date=row['Date1'], numero_facture=row['Numéro de facture'],
                            nom_fournisseur=row['Nom du fournisseur'], nom_client=row['Nom du client'],
                          libelle=row['Libellé'],prix_unitaire=row['Prix unitaire'],total_ttc=row['Total TTC'],
