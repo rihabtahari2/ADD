@@ -51,15 +51,15 @@ def transform(data):
     return df
 
 # Fonction de chargement
-def load(data, dataimport_instance ):
-   for index, row in data.iterrows():
+def load(data, dataimport_instance):
+    for index, row in data.iterrows():
         facture = Facture(fichier= dataimport_instance ,date=row['Date1'], numero_facture=row['Numéro de facture'],
                            nom_fournisseur=row['Nom du fournisseur'], nom_client=row['Nom du client'],
                          libelle=row['Libellé'],prix_unitaire=row['Prix unitaire'],total_ttc=row['Total TTC'],
                          quantite=row['Quantité'],tva=row['TVA'],
                          total_hors_taxe=row['Total hors taxe'],catéogorie=row['Catégorie'])
         facture.save()
-   print(data) 
+    print(data) 
 
 
 

@@ -86,3 +86,53 @@ class Facture(models.Model):
     def __str__(self):
         return self.libelle
 
+class Dim_Produit(models.Model):
+    id_produit = models.AutoField(primary_key=True)
+    libelle = models.CharField(max_length=100)
+    prix_unitaire = models.DecimalField(max_digits=10, decimal_places=2)
+    def __str__(self):
+        return self.libelle
+    
+class Dim_Temps(models.Model):
+    id_temps = models.AutoField(primary_key=True)
+    id_Tempss=models.CharField(max_length=500)
+    jour=models.CharField(max_length=2)
+    mois = models.CharField(max_length=2)
+    annee = models.IntegerField()
+    def __str__(self):
+        return self.annee
+    
+class Dim_Client(models.Model):
+    id_client = models.AutoField(primary_key=True)
+    nom_client = models.CharField(max_length=100)
+    def __str__(self):
+        return self.nom_client
+class fait_vente(models.Model):
+    id_ligne_facture = models.AutoField(primary_key=True)
+    id_client = models.ForeignKey(Dim_Client, on_delete=models.CASCADE)
+    id_produit = models.ForeignKey(Dim_Produit, on_delete=models.CASCADE)
+    id_temps = models.ForeignKey(Dim_Temps, on_delete=models.CASCADE)
+    TVA = models.DecimalField(max_digits=10, decimal_places=2)
+    total_ttc = models.DecimalField(max_digits=10, decimal_places=2)
+    total_hors_taxe = models.DecimalField(max_digits=10, decimal_places=2)
+    quantite = models.IntegerField()
+    def __str__(self):
+        return str(self.total_ttc)
+    
+class Dim_Fournisseur(models.Model):
+    id_fournisseur = models.AutoField(primary_key=True)
+    nom_fournisseur = models.CharField(max_length=100)
+    def __str__(self):
+        return self.nom_fournisseur
+    
+class fait_achat(models.Model):
+    id_ligne_facture = models.AutoField(primary_key=True)
+    id_produit = models.ForeignKey(Dim_Produit, on_delete=models.CASCADE)
+    id_fournisseur = models.ForeignKey(Dim_Fournisseur, on_delete=models.CASCADE)
+    id_temps = models.ForeignKey(Dim_Temps, on_delete=models.CASCADE)
+    TVA = models.DecimalField(max_digits=10, decimal_places=2)
+    total_ttc = models.DecimalField(max_digits=10, decimal_places=2)
+    total_hors_taxe = models.DecimalField(max_digits=10, decimal_places=2)
+    quantite = models.IntegerField()
+    def __str__(self):
+        return str(self.total_ttc)

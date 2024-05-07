@@ -17,7 +17,7 @@ from fin.resources import DonnéesResource
 import csv,io
 from .etl import transform, load
 from .decorators import expert_required
-
+from .ETL1 import extract, transform1
 import pandas as pd
 from io import TextIOWrapper
 from datetime import datetime
@@ -667,6 +667,7 @@ def export_pdf(request):
         title_text = "Rapport Financier annuelle "
         title_style = getSampleStyleSheet()['Title']
         title = Paragraph(title_text, title_style)
+        # Récupération du chiffre d'affaires total des ventes depuis la vue dashboard
 
         # Création du PDF
         pdf = SimpleDocTemplate(response, pagesize=letter)
