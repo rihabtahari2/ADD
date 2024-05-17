@@ -1,4 +1,4 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render,redirect
 from .forms import *
 from django.contrib.auth.forms import UserCreationForm
@@ -22,37 +22,7 @@ from io import TextIOWrapper
 from datetime import datetime
 
 
-#from fin.forms import OrderForm
-#from .filters import OrderFilter
-# Create your views here.
-def login(request):
-    if request.method == 'POST':
-        if 'add' in request.POST:
-            nom = request.POST.get('Username')
-            email = request.POST.get('Email')
-            mot_de_passe = request.POST.get('Password')
-            confirmation_mot_de_passe = request.POST.get('Confirm password')
-            #user=omptable.objects.create(ComptableNom=nom, ComptableEmail=email, ComptablePassword=mot_de_passe)
-            #user.save()
-    
-    return render(request,'pfe/login.html')
 
-def login (request):
-    if request.method == 'POST':
-        username = request.POST.get('username')
-        password = request.POST.get('password')
-
-        # Authentification de l'assistant
-        assistant = authenticate(request, username=username, password=password)
-
-        if assistant is not None:
-            auth_login(request, assistant)
-            return redirect('home')
-        else:
-            messages.error(request, 'Nom d\'utilisateur ou mot de passe incorrect.')
-
-    return render(request, 'pfe/login.html') 
-    
 
 #@ login_required(login_url='singin')
 def home(request):
@@ -136,10 +106,17 @@ def list_client(request):
     if user_is_expert:
         expert_profile = ExpertProfile.objects.get(user=request.user)
         clients = client.objects.filter(Expertprofile=expert_profile)
+
     else:
         # Si l'utilisateur n'est pas un expert, récupérez tous les clients
         clients = client.objects.all()
-
+    # Ajoutez les noms d'utilisateur associés à chaque client
+    for client_obj in clients:
+        user_client = UserClient.objects.filter(client=client_obj).first()
+        if user_client:
+            client_obj.username = user_client.user.username
+        else:
+            client_obj.username = None
     # Paginez les clients avec 8 clients par page
     paginator = Paginator(clients, 8)
     page_number = request.GET.get('page')
@@ -162,15 +139,6 @@ def add_client(request):
             
             # Associez le client à l'ExpertProfile
             client_instance.Expertprofile = expert_profile
-            
-            # Récupérez l'assistant sélectionné dans le formulaire
-            assistant_username = form.cleaned_data['id_user']
-            
-            # Récupérez l'utilisateur correspondant à l'assistant sélectionné
-            assistant_user = User.objects.get(username=assistant_username)
-            
-            # Associez l'utilisateur de l'assistant au client
-            client_instance.id_user = assistant_user
             
             # Sauvegardez le client dans la base de données
             client_instance.save()
@@ -238,7 +206,9 @@ import smtplib
 def add_assistant(request):
     user_is_expert = request.user.groups.filter(name='Experts').exists()
     form = CreateUserform()
-
+    # Si c'est une requête GET, récupérer les clients associés à l'expert connecté
+    expert_profile = ExpertProfile.objects.get(user=request.user)
+    expert_clients = client.objects.filter(Expertprofile=expert_profile)
     if request.method == 'POST':
         form = CreateUserform(request.POST)
         if form.is_valid():
@@ -254,7 +224,6 @@ def add_assistant(request):
             username = form.cleaned_data.get('username')
             group = Group.objects.get(name='Assistants')
             user.groups.add(group)
-            messages.success(request, 'Account was created for ' + username)
 
             selected_clients = request.POST.getlist('clients')
 
@@ -273,9 +242,8 @@ def add_assistant(request):
                 to=[form.cleaned_data.get('email')],
             )
             email.send()
-
             return redirect('assistant')
-    context = {'form': form, 'user_is_expert': user_is_expert}
+    context = {'form': form, 'user_is_expert': user_is_expert,'expert_clients': expert_clients}
     return render(request, 'pfe/add_assistant.html', context)
 @expert_required
 def update_assistant(request, pk):
@@ -307,7 +275,12 @@ def home_page(request):
         if form.is_valid():
             selected_client_name = form.cleaned_data['client']
             selected_client = client.objects.get(clientName=selected_client_name)
-            
+            dim_client_ent, _ = Dim_client_ent.objects.get_or_create(
+                nom=selected_client.clientName,
+                Adresse=selected_client.clientAdresse,
+                Activity=selected_client.clientActivity,
+                email=selected_client.contact
+            )
             # Créez une instance de dataimport, mais ne la sauvegardez pas encore dans la base de données
             dataimport_instance = form.save(commit=False)
             
@@ -323,10 +296,16 @@ def home_page(request):
             fichier_id = dataimport_instance.Id
             # charger les données csv
             myfile = request.FILES['myfile']
-            data = pd.read_csv(myfile, encoding='ISO-8859-1').rename(columns=lambda x: x.lower())
-            transformed_data = transform(data)
-            load(transformed_data, dataimport_instance)
-            return redirect('données', fichier_id=fichier_id)  
+            if myfile.name.endswith('.csv'):
+                # Si c'est un fichier CSV, procédez au traitement
+                data = pd.read_csv(myfile, encoding='ISO-8859-1').rename(columns=lambda x: x.lower())
+                transformed_data = transform(data)
+                load(transformed_data, dataimport_instance,dim_client_ent)
+                return redirect('données', fichier_id=fichier_id)
+            else:
+                # Si ce n'est pas un fichier CSV, renvoyez un message d'erreur
+                return HttpResponseBadRequest("Le fichier téléchargé n'est pas un fichier CSV.")
+             
 
     # Récupérez les dataimport associés au profil de l'utilisateur actuel
     if user_is_expert:
@@ -631,7 +610,7 @@ def dashboard(request):
             for libelle, total_ttc in totals_par_produit.items():
                 produits_ttc.append((libelle, total_ttc))
             #////////////////////////////////////////////////////////////////////////////////
-             #////////////////////////produit par achat////////////////////////////////////
+            #////////////////////////produit par achat////////////////////////////////////
             # Récupérer les factures de vente
             factures_vente = Facture.objects.filter(catéogorie='Achat')
             # Initialiser un dictionnaire pour stocker les totaux TTC par produit
@@ -826,6 +805,109 @@ def export_pdf(request):
         return response
     else:
         return HttpResponse("Dataimport ID is missing.", status=400)
+from django.db.models.functions import TruncMonth, ExtractYear
+def dashboard1(request):
+    dataimport_id = request.GET.get('dataimport_id')  # Récupérer l'ID depuis la requête GET
+    if dataimport_id:
+        try:
+            dataimport_instance = dataimport.objects.get(pk=dataimport_id)
 
+            # Calcul des statistiques
+            nombre_ventes = fait_vente.objects.count()
+            nombre_achats = fait_achat.objects.count()
+            nombre_factures = nombre_ventes  + nombre_achats
 
+            nombre_fournisseurs = Dim_Fournisseur.objects.distinct().count()
+            nombre_clients = Dim_Client.objects.distinct().count()
+
+            total_revenue = fait_vente.objects.aggregate(Sum('total_ttc'))['total_ttc__sum'] or 0
+            # Nombre d'achats par mois
+            achats_par_mois = (
+                fait_achat.objects
+                .annotate(month=TruncMonth('id_temps__id_Tempss'))
+                .values('month')
+                .annotate(count=Count('id'))
+                .order_by('month')
+            )
+
+            # Nombre de ventes par mois
+            ventes_par_mois = (
+                fait_vente.objects
+                .annotate(month=TruncMonth('id_temps__id_Tempss'))
+                .values('month')
+                .annotate(count=Count('id'))
+                .order_by('month')
+            )
+            # Préparer les données pour Chart.js
+            labels = [achat['month'].strftime('%Y-%m') for achat in achats_par_mois]
+            achats_data = [achat['count'] for achat in achats_par_mois]
+            ventes_data = [vente['count'] for vente in ventes_par_mois]
+            # Obtenez le chiffre d'affaires par mois
+            chiffre_affaires_par_mois = (
+                fait_vente.objects
+                .annotate(mois=ExtractMonth('id_temps__id_Tempss'), annee=ExtractYear('id_temps__id_Tempss'))
+                .values('mois', 'annee')
+                .annotate(ca=Sum('ca'))
+                .order_by('annee', 'mois')
+            )
+            # Préparez les données pour le graphique
+            mois_labels = []
+            ca_values = []
+
+            for item in chiffre_affaires_par_mois:
+                mois_labels.append(datetime(item['annee'], item['mois'], 1).strftime('%B %Y'))
+                ca_values.append(float(item['ca']))
+            context = {
+                'dataimport_instance': dataimport_instance,
+                'nombre_ventes': nombre_ventes,
+                'nombre_total_factures_achat': nombre_achats,
+                'nombre_factures': nombre_factures,
+                'nombre_fournisseurs': nombre_fournisseurs,
+                'nombre_clients': nombre_clients,
+                'total_revenue': total_revenue,
+                'labels': labels,
+                'achat_par_mois': achats_data,
+                'ventes_par_mois': ventes_data,
+                'mois_labels': mois_labels,
+                'chiffre_affaires_liste': ca_values,
+            }
+            return render(request, 'pfe/dashboard1.html', context)
+        except dataimport.DoesNotExist:
+            return HttpResponse("Dataimport avec cet ID non trouvé.", status=404)
+    
+    return render(request, 'test.html') 
    
+
+
+
+#from fin.forms import OrderForm
+#from .filters import OrderFilter
+# Create your views here.
+def login(request):
+    if request.method == 'POST':
+        if 'add' in request.POST:
+            nom = request.POST.get('Username')
+            email = request.POST.get('Email')
+            mot_de_passe = request.POST.get('Password')
+            confirmation_mot_de_passe = request.POST.get('Confirm password')
+            #user=omptable.objects.create(ComptableNom=nom, ComptableEmail=email, ComptablePassword=mot_de_passe)
+            #user.save()
+    
+    return render(request,'pfe/login.html')
+
+def login (request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+
+        # Authentification de l'assistant
+        assistant = authenticate(request, username=username, password=password)
+
+        if assistant is not None:
+            auth_login(request, assistant)
+            return redirect('home')
+        else:
+            messages.error(request, 'Nom d\'utilisateur ou mot de passe incorrect.')
+
+    return render(request, 'pfe/login.html') 
+    

@@ -218,7 +218,7 @@
                                 <td>{{ client.clientAdresse }}</td>
                                 <td>{{ client.clientActivity}}</td>
                                 <td>{{ client.contact}}</td>
-                                <td>{{ client.id_user.username }}</td>  
+                                <td>{{ client.username }}</td>  
                                 <td>    
                                     <a href="#" class="view" title="View" data-toggle="tooltip"><i class="material-icons">&#xE417;</i></a>
                                     <a href="{% url 'update_client' pk=client.pk %}" class="edit" title="Edit" data-toggle="tooltip"><i class="material-icons">&#xE254;</i></a>

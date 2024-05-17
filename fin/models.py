@@ -1,3 +1,4 @@
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import User 
 from django.contrib.auth.models import AbstractUser
@@ -6,13 +7,13 @@ from django.core.exceptions import ValidationError
 class ExpertProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     def __str__(self):
-        return self.user +'_ExpertProfile_'
+        return str(self.user) +'_ExpertProfile_'
 
 class AssistantProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     expert_profile = models.ForeignKey(ExpertProfile, on_delete=models.CASCADE, null=True)
     def __str__(self):
-        return self.user + '_AssistantProfile_'
+        return str(self.user) + '_AssistantProfile_'
 
 class Données(models.Model):
     Nom = models.CharField(max_length=100)
@@ -85,6 +86,14 @@ class Facture(models.Model):
 
     def __str__(self):
         return self.libelle
+class Dim_client_ent(models.Model):
+    Id=models.AutoField(primary_key=True)
+    nom=models.CharField(max_length=500,validators=[validate_caracteres])
+    Adresse=models.CharField(max_length=500,default=' ')
+    Activity=models.CharField(max_length=500, default=' ')
+    email = models.EmailField(max_length=254,default='example@example.com')
+    def __str__(self):
+        return self.nom
 
 class Dim_Produit(models.Model):
     id_produit = models.AutoField(primary_key=True)
@@ -112,10 +121,12 @@ class fait_vente(models.Model):
     id_client = models.ForeignKey(Dim_Client, on_delete=models.CASCADE)
     id_produit = models.ForeignKey(Dim_Produit, on_delete=models.CASCADE)
     id_temps = models.ForeignKey(Dim_Temps, on_delete=models.CASCADE)
+    client_ent= models.ForeignKey(Dim_client_ent, on_delete=models.CASCADE,default="")
     TVA = models.DecimalField(max_digits=10, decimal_places=2)
     total_ttc = models.DecimalField(max_digits=10, decimal_places=2)
     total_hors_taxe = models.DecimalField(max_digits=10, decimal_places=2)
     quantite = models.IntegerField()
+    CA = models.DecimalField(max_digits=10, decimal_places=2,default=Decimal('0.00'))
     def __str__(self):
         return str(self.total_ttc)
     
@@ -130,6 +141,7 @@ class fait_achat(models.Model):
     id_produit = models.ForeignKey(Dim_Produit, on_delete=models.CASCADE)
     id_fournisseur = models.ForeignKey(Dim_Fournisseur, on_delete=models.CASCADE)
     id_temps = models.ForeignKey(Dim_Temps, on_delete=models.CASCADE)
+    client_ent= models.ForeignKey(Dim_client_ent, on_delete=models.CASCADE,default="")
     TVA = models.DecimalField(max_digits=10, decimal_places=2)
     total_ttc = models.DecimalField(max_digits=10, decimal_places=2)
     total_hors_taxe = models.DecimalField(max_digits=10, decimal_places=2)

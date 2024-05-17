@@ -56,7 +56,7 @@ def transform(data):
     return df
 
 # Fonction de chargement
-def load(data, dataimport_instance):
+def load(data, dataimport_instance,dim_client_ent):
     for index, row in data.iterrows():
         produit, _ = Dim_Produit.objects.get_or_create(
             libelle=row['Libellé'],
@@ -72,24 +72,25 @@ def load(data, dataimport_instance):
             mois=date_facture.month,
             annee=date_facture.year
         )
-
         # Remplir Dim_Client
         if pd.notna(row['Nom du client']):
             # Créer une instance de DimClient
             client, _ = Dim_Client.objects.get_or_create(
                 nom_client=row['Nom du client']
             )
-
+            ca = row['Prix unitaire'] * row['Quantité']
             # les jointure
             # Créer une instance de fait_vente en utilisant les instances récupérées
             nouvelle_vente = fait_vente.objects.create(
                 id_client=client,
                 id_produit=produit,
                 id_temps=temps,
+                client_ent=dim_client_ent,
                 TVA=row['TVA'],
                 total_ttc=row['Total TTC'],
                 total_hors_taxe=row['Total hors taxe'],
-                quantite=row['Quantité']
+                quantite=row['Quantité'],
+                CA=ca
             )
 
         # Remplir Dim_Fournisseur
@@ -103,12 +104,13 @@ def load(data, dataimport_instance):
                 id_fournisseur=fournisseur,
                 id_produit=produit,
                 id_temps=temps,
+                client_ent=dim_client_ent,
                 TVA=row['TVA'],
                 total_ttc=row['Total TTC'],
                 total_hors_taxe=row['Total hors taxe'],
-                quantite=row['Quantité']
+                quantite=row['Quantité'],
+                
             )
-
         facture = Facture(fichier= dataimport_instance ,date=row['Date1'], numero_facture=row['Numéro de facture'],
                            nom_fournisseur=row['Nom du fournisseur'], nom_client=row['Nom du client'],
                          libelle=row['Libellé'],prix_unitaire=row['Prix unitaire'],total_ttc=row['Total TTC'],

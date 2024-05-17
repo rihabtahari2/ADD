@@ -11,11 +11,6 @@ class CreateUserform (UserCreationForm):
         fields=('username','email','password1','password2','first_name', 'last_name')
 
 class ClientForm(forms.ModelForm):
-    id_user = forms.ModelChoiceField(queryset=User.objects.filter(groups__name='Assistants').order_by('username'), 
-                                     empty_label=None, 
-                                     label='choice assistant', 
-                                     to_field_name='username',
-                                     widget=forms.Select(attrs={'class': 'utilisateur-input'}))
     class Meta:
         model = client
         fields = ('clientName','clientAdresse','clientActivity','contact')
