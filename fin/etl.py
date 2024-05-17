@@ -6,6 +6,12 @@ from datetime import datetime
 from dateutil import parser
 import pandas as pd
 
+from pymongo import MongoClient
+# Connexion à la base de données MongoDB
+client = MongoClient('localhost', 27017)
+# Utilisation de la base de données
+db = client['rihab']
+
 def convertir_nom_colonne(nom_colonne):
     if nom_colonne.lower() == 'tva':
         return 'TVA'
@@ -24,7 +30,6 @@ def determiner_categorie(row):
 # Fonction de transformation
 def transform(data):
     df = pd.DataFrame(data)
-    print(df)
     def convertir_date(date_str):
         try:
             date_obj = pd.to_datetime(date_str, dayfirst=True)  # Analyse de la date en spécifiant que le jour est en premier
@@ -40,7 +45,7 @@ def transform(data):
     # Fusionner les colonnes 'Date' et 'Heure' en une seule colonne 'Date'
     df['Date1'] = df['date']+ ' ' + df['time'].dt.strftime('%H:%M:%S')
     df.columns = df.columns.map(convertir_nom_colonne)# Afficher les données avec les noms de colonnes convertis en majuscules
-    #trier les date 
+    #trier les date par ordre croissante
     def custom_sort(date_str):
         return int(date_str.split('/')[1]) 
     df_sorted = df.sort_values(by='Date1', key=lambda x: x.map(custom_sort))
@@ -74,6 +79,7 @@ def load(data, dataimport_instance):
             client, _ = Dim_Client.objects.get_or_create(
                 nom_client=row['Nom du client']
             )
+
             # les jointure
             # Créer une instance de fait_vente en utilisant les instances récupérées
             nouvelle_vente = fait_vente.objects.create(
@@ -85,12 +91,24 @@ def load(data, dataimport_instance):
                 total_hors_taxe=row['Total hors taxe'],
                 quantite=row['Quantité']
             )
+
         # Remplir Dim_Fournisseur
         if pd.notna(row['Nom du fournisseur']):
             # Créer une instance de DimFournisseur
             fournisseur, _ = Dim_Fournisseur.objects.get_or_create(
                 nom_fournisseur=row['Nom du fournisseur']
             )
+             # Créer une instance de fait_vente en utilisant les instances récupérées
+            nouvelle_achat = fait_achat.objects.create(
+                id_fournisseur=fournisseur,
+                id_produit=produit,
+                id_temps=temps,
+                TVA=row['TVA'],
+                total_ttc=row['Total TTC'],
+                total_hors_taxe=row['Total hors taxe'],
+                quantite=row['Quantité']
+            )
+
         facture = Facture(fichier= dataimport_instance ,date=row['Date1'], numero_facture=row['Numéro de facture'],
                            nom_fournisseur=row['Nom du fournisseur'], nom_client=row['Nom du client'],
                          libelle=row['Libellé'],prix_unitaire=row['Prix unitaire'],total_ttc=row['Total TTC'],
@@ -99,7 +117,7 @@ def load(data, dataimport_instance):
         facture.save()
     print(data) 
 
+# Fermeture de la connexion
+client.close()
 
-
-# Appel des fonctions ETL
 

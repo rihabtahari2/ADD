@@ -158,8 +158,16 @@
                 <div class="bg-white rounded text-center">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                     </div>
-                    <h6 class="mb-0">gggg</h6>
-                        <canvas id="my9Chart"></canvas>
+                    <h6 class="mb-0">Produits par Vente</h6>
+                        <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="bg-white rounded text-center">
+                    <div class="d-flex align-items-center justify-content-between mb-4">
+                    </div>
+                    <h6 class="mb-0">Produits par Achat</h6>
+                        <canvas id="bar1Chart"></canvas>
                 </div>
             </div>
        </div>
@@ -450,7 +458,6 @@
                         data.datasets.push({
                             label: produit,
                             data: [],
-                            fill: true,
                             backgroundColor: produitColors[produit],  // Utiliser la couleur associée au produit
                             borderColor: produitColors[produit],  // Utiliser la même couleur pour la bordure
                             borderWidth: 1,
@@ -464,7 +471,7 @@
         
             // Créer le diagramme à aire empilée
             var my9Chart = new Chart(ctx9, {
-                type: 'line',
+                type: 'bar',  // Utiliser 'bar' pour un diagramme à aire empilée
                 data: data,
                 options: {
                     scales: {
@@ -487,8 +494,96 @@
                 }
             });
         </script>
-    
+        <canvas id="barChart"></canvas>
+        <script>
+            var ctx10 = document.getElementById('barChart').getContext('2d');
+            var produits = [];
+            var totauxTTC = [];
         
+            {% for libelle, total_ttc in produits_ttc %}
+                produits.push("{{ libelle }}");
+                totauxTTC.push({{ total_ttc }});
+            {% endfor %}
+            // Créer le diagramme de barre
+            var barChart = new Chart(ctx10, {
+                type: 'bar',
+                data: {
+                    labels: produits,
+                    datasets: [{
+                        label: 'Total TTC',
+                        data: totauxTTC,
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        y: {
+                            stacked: true,  // Empiler les valeurs sur l'axe y
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Total TTC (en DT)'
+                            }
+                        },
+                        x: {
+                            stacked: true,  // Empiler les valeurs sur l'axe x
+                            title: {
+                                display: true,
+                                text: 'Produits'
+                            }
+                        }
+                    }
+                        
+                }
+            });
+        </script>
+         <canvas id="bar1Chart"></canvas>
+         <script>
+             var ctx11 = document.getElementById('bar1Chart').getContext('2d');
+             var produits = [];
+             var totauxTTC = [];
+         
+             {% for libelle, total_ttc in produits_ttc1 %}
+                 produits.push("{{ libelle }}");
+                 totauxTTC.push({{ total_ttc }});
+             {% endfor %}
+             // Créer le diagramme de barre
+             var barChart = new Chart(ctx11, {
+                 type: 'bar',
+                 data: {
+                     labels: produits,
+                     datasets: [{
+                         label: 'Total TTC',
+                         data: totauxTTC,
+                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                         borderColor: 'rgba(54, 162, 235, 1)',
+                         borderWidth: 1
+                     }]
+                 },
+                 options: {
+                     scales: {
+                         y: {
+                             stacked: true,  // Empiler les valeurs sur l'axe y
+                             beginAtZero: true,
+                             title: {
+                                 display: true,
+                                 text: 'Total TTC (en DT)'
+                             }
+                         },
+                         x: {
+                             stacked: true,  // Empiler les valeurs sur l'axe x
+                             title: {
+                                 display: true,
+                                 text: 'Produits'
+                             }
+                         }
+                     }
+                         
+                 }
+             });
+         </script>
     </script>
    
     

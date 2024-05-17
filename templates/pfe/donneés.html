@@ -148,7 +148,7 @@
                 .then(data => {
                     if (data.success) {
                         console.log(data.message); // Afficher le message de succès
-                        window.location.href = `/donne/${fichierId}`; // Redirection après traitement réussi
+                        window.location.href = `/donne/${fichierId}/`; // Redirection après traitement réussi
                     } else {
                         console.error(data.message); // Afficher le message d'erreur
                     }

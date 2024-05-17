@@ -17,7 +17,6 @@ from fin.resources import DonnéesResource
 import csv,io
 from .etl import transform, load
 from .decorators import expert_required
-from .ETL1 import extract, transform1
 import pandas as pd
 from io import TextIOWrapper
 from datetime import datetime
@@ -72,7 +71,7 @@ def register(request):
           username = form.cleaned_data.get('username')
           group = Group.objects.get(name='Experts')
           user.groups.add(group)
-          messages.success(request,'Account was created for '+ username)
+          messages.success(request, 'Account was created for ' + username, extra_tags='register_success')
 
           return redirect('singin')
         
@@ -322,6 +321,7 @@ def home_page(request):
             dataimport_instance.save()
 
             fichier_id = dataimport_instance.Id
+            # charger les données csv
             myfile = request.FILES['myfile']
             data = pd.read_csv(myfile, encoding='ISO-8859-1').rename(columns=lambda x: x.lower())
             transformed_data = transform(data)
@@ -401,11 +401,62 @@ def import_data(request, fichier_id):
 def load_data(data, fichier_instance):
     for index, row in data.iterrows():
         # Créer une instance de Facture en associant l'instance de dataimport passée en paramètre
-        facture = Facture(fichier=fichier_instance, Date=row['Date'], numero_facture=row['Numéro de facture'],
+        produit, _ = Dim_Produit.objects.get_or_create(
+            libelle=row['Libellé'],
+            defaults={'prix_unitaire': row['Prix unitaire']}
+        )
+
+        # Remplir Dim_Temps
+        date_facture = datetime.strptime(row['Date1'], '%d/%m/%Y %H:%M:%S')
+        # Créer une instance de DimTemps
+        temps, _ = Dim_Temps.objects.get_or_create(
+            id_Tempss=date_facture,
+            jour=date_facture.day,
+            mois=date_facture.month,
+            annee=date_facture.year
+        )
+
+        # Remplir Dim_Client
+        if pd.notna(row['Nom du client']):
+            # Créer une instance de DimClient
+            client, _ = Dim_Client.objects.get_or_create(
+                nom_client=row['Nom du client']
+            )
+
+            # les jointure
+            # Créer une instance de fait_vente en utilisant les instances récupérées
+            nouvelle_vente = fait_vente.objects.create(
+                id_client=client,
+                id_produit=produit,
+                id_temps=temps,
+                TVA=row['TVA'],
+                total_ttc=row['Total TTC'],
+                total_hors_taxe=row['Total hors taxe'],
+                quantite=row['Quantité']
+            )
+
+        # Remplir Dim_Fournisseur
+        if pd.notna(row['Nom du fournisseur']):
+            # Créer une instance de DimFournisseur
+            fournisseur, _ = Dim_Fournisseur.objects.get_or_create(
+                nom_fournisseur=row['Nom du fournisseur']
+            )
+             # Créer une instance de fait_vente en utilisant les instances récupérées
+            nouvelle_achat = fait_achat.objects.create(
+                id_fournisseur=fournisseur,
+                id_produit=produit,
+                id_temps=temps,
+                TVA=row['TVA'],
+                total_ttc=row['Total TTC'],
+                total_hors_taxe=row['Total hors taxe'],
+                quantite=row['Quantité']
+            )
+
+        facture = Facture(fichier= fichier_instance ,date=row['Date1'], numero_facture=row['Numéro de facture'],
                            nom_fournisseur=row['Nom du fournisseur'], nom_client=row['Nom du client'],
-                           libelle=row['Libellé'], prix_unitaire=row['Prix unitaire'], total_ttc=row['Total TTC'],
-                           total=row['Total'], quantite=row['Quantité'], tva=row['TVA'],
-                           total_hors_taxe=row['Total hors taxe'], catéogorie=row['Catégorie'])
+                         libelle=row['Libellé'],prix_unitaire=row['Prix unitaire'],total_ttc=row['Total TTC'],
+                         quantite=row['Quantité'],tva=row['TVA'],
+                         total_hors_taxe=row['Total hors taxe'],catéogorie=row['Catégorie'])
         # Enregistrer la facture dans la base de données
         facture.save()
 
@@ -450,7 +501,7 @@ from decimal import Decimal
 from bson.decimal128 import Decimal128
 from bson import json_util
 import json
-
+import decimal
 def dashboard(request):
     dataimport_id = request.GET.get('dataimport_id')  # Récupérer l'ID depuis la requête GET
     fichier_id = request.GET.get('fichier_id')
@@ -557,7 +608,55 @@ def dashboard(request):
                 print(f"Mois {mois}:")
                 for produit, chiffre_affaire_total in chiffre_affaires_par_produit.items():
                     print(f"- Produit {produit}: {chiffre_affaire_total}")
+            #////////////////////////produit par vente////////////////////////////////////
+            # Récupérer les factures de vente
+            factures_vente = Facture.objects.filter(catéogorie='Vente')
+            # Initialiser un dictionnaire pour stocker les totaux TTC par produit
+            totals_par_produit = {}
+
+            # Parcourir les factures de vente
+            for facture in factures_vente:
+                libelle = facture.libelle
+                total_ttc = decimal.Decimal(str(facture.total_ttc))
+                # Vérifier si le produit est déjà dans le dictionnaire
+                if libelle in totals_par_produit:
+                    # Si oui, ajouter le total TTC au total existant
+                    totals_par_produit[libelle] += total_ttc
+                else:
+                    # Sinon, initialiser le total TTC pour ce produit
+                    totals_par_produit[libelle] = total_ttc
+            produits_ttc = []
+
+            # Parcourir les totaux par produit
+            for libelle, total_ttc in totals_par_produit.items():
+                produits_ttc.append((libelle, total_ttc))
+            #////////////////////////////////////////////////////////////////////////////////
+             #////////////////////////produit par achat////////////////////////////////////
+            # Récupérer les factures de vente
+            factures_vente = Facture.objects.filter(catéogorie='Achat')
+            # Initialiser un dictionnaire pour stocker les totaux TTC par produit
+            totals_par_produit1 = {}
+
+            # Parcourir les factures de vente
+            for facture in factures_vente:
+                libelle = facture.libelle
+                total_ttc = decimal.Decimal(str(facture.total_ttc))
+                # Vérifier si le produit est déjà dans le dictionnaire
+                if libelle in totals_par_produit1:
+                    # Si oui, ajouter le total TTC au total existant
+                    totals_par_produit1[libelle] += total_ttc
+                else:
+                    # Sinon, initialiser le total TTC pour ce produit
+                    totals_par_produit1[libelle] = total_ttc
+            produits_ttc1 = []
+
+            # Parcourir les totaux par produit
+            for libelle, total_ttc in totals_par_produit1.items():
+                produits_ttc1.append((libelle, total_ttc))
+            #////////////////////////////////////////////////////////////////////////////////
             context = {
+                'produits_ttc1': produits_ttc1,
+                'produits_ttc': produits_ttc,
                 'chiffre_affaire_total':chiffre_affaire_total,
                 'produit':produit,
                 'dataimport_instance': dataimport_instance,
