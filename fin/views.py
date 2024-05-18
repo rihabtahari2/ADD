@@ -770,31 +770,47 @@ def export_csv(request):
         return HttpResponse("ID de dataimport manquant.", status=400)
 from reportlab.platypus import Spacer
 import calendar
-
+from reportlab.lib.units import inch
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 def export_pdf(request):
     dataimport_id = request.GET.get('dataimport_id')
     if dataimport_id:
         fichiers = dataimport.objects.get(pk=dataimport_id)
         factures_achat = Facture.objects.filter(fichier=fichiers, catéogorie='Achat')
         factures_vente = Facture.objects.filter(fichier=fichiers, catéogorie='Vente')
-        
+        client_name = fichiers.client.clientName
+        addresse_client=fichiers.client.clientAdresse
+        activity_client=fichiers.client.clientActivity
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = 'attachment; filename="rapport_financier.pdf"'
-
         title_text = "Rapport Financier Annuel"
         title_style = getSampleStyleSheet()['Title']
         title = Paragraph(title_text, title_style)
 
         pdf = SimpleDocTemplate(response, pagesize=letter)
         elements = [title]
+        # Spacer pour déplacer les éléments vers la droite
+        spacer_width = 2 * inch  # Largeur du spacer en pouces (ajustée)
+        elements.append(Spacer(spacer_width, 1))
+        # Ajouter les détails du client à l'extrémité gauche de la page
+        client_details_text = f"Client: {client_name}<br/>Adresse: {addresse_client}<br/>Activité: {activity_client}"
+        client_details_style = getSampleStyleSheet()['Heading5']
+        client_details_paragraph = Paragraph(client_details_text, client_details_style)
+        elements.append(client_details_paragraph)
 
         # Convertir les valeurs total_ttc en Decimal
         total_revenue = sum(Decimal(str(facture.total_ttc)) for facture in factures_vente) - sum(Decimal(str(facture.total_ttc)) for facture in factures_achat)
-        total_revenue_text = f"Le revenu total du client est : {total_revenue} DT"
-        total_revenue_style = getSampleStyleSheet()['Heading2']
+        total_revenue_text = f"Le revenu total : {total_revenue} DT"
+        total_revenue_style = getSampleStyleSheet()['Heading3']
         total_revenue_paragraph = Paragraph(total_revenue_text, total_revenue_style)
         elements.append(total_revenue_paragraph)
-
+    
+        ca = sum(Decimal(str(f.prix_unitaire)) * f.quantite for f in factures_vente)
+        ca_text = f"Le chiffre d'affaire : {ca} DT"
+        ca_style = getSampleStyleSheet()['Heading3']
+        ca_paragraph = Paragraph(ca_text, ca_style)
+        elements.append(ca_paragraph)
         def group_and_calculate_totals(factures):
             grouped = {}
             for facture in factures:
