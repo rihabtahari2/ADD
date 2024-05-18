@@ -127,6 +127,7 @@ class fait_vente(models.Model):
     total_hors_taxe = models.DecimalField(max_digits=10, decimal_places=2)
     quantite = models.IntegerField()
     CA = models.DecimalField(max_digits=10, decimal_places=2,default=Decimal('0.00'))
+    id_facture = models.ForeignKey(dataimport, on_delete=models.CASCADE,default="")
     def __str__(self):
         return str(self.total_ttc)
     
@@ -146,5 +147,6 @@ class fait_achat(models.Model):
     total_ttc = models.DecimalField(max_digits=10, decimal_places=2)
     total_hors_taxe = models.DecimalField(max_digits=10, decimal_places=2)
     quantite = models.IntegerField()
+    id_facture = models.ForeignKey(dataimport, on_delete=models.CASCADE,default="")
     def __str__(self):
         return str(self.total_ttc)

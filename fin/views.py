@@ -248,6 +248,8 @@ def add_assistant(request):
 @expert_required
 def update_assistant(request, pk):
     user_is_expert = request.user.groups.filter(name='Experts').exists()
+    expert_profile = ExpertProfile.objects.get(user=request.user)
+    expert_clients = client.objects.filter(Expertprofile=expert_profile)
     # Récupérer l'assistant à partir de son ID
     assistant = User.objects.get(id=pk)
     
@@ -260,13 +262,22 @@ def update_assistant(request, pk):
     else:
         form = CreateUserform(instance=assistant)  # Pré-remplir le formulaire avec les informations actuelles de l'assistant
     
-    context = {'form': form, 'user_is_expert': user_is_expert}
+    context = {'form': form, 'user_is_expert': user_is_expert,'expert_clients': expert_clients}
     return render(request, 'pfe/update_assistant.html', context)
 @ login_required(login_url='singin')
 def home_page(request):
-    # Vérifier si l'utilisateur appartient au groupe "Experts"
+    # Vérifier si l'utilisateur appartient aux groupes "Experts" ou "Assistants"
     user_is_expert = request.user.groups.filter(name='Experts').exists()
-
+    user_is_assistant = request.user.groups.filter(name='Assistants').exists()
+    
+    expert_clients = None
+    if user_is_expert:
+        # Si l'utilisateur est un expert, récupérer les clients associés
+        expert_profile = ExpertProfile.objects.get(user=request.user)
+        expert_clients = client.objects.filter(Expertprofile=expert_profile)
+    elif user_is_assistant:
+        # Si l'utilisateur est un assistant ou un expert_client, récupérer les clients affectés
+        expert_clients = client.objects.filter(userclient__user=request.user)
     # Votre logique existante pour le traitement du formulaire et la récupération des fichiers
     form = FichiersForm()
     fichier_id = None
@@ -313,7 +324,7 @@ def home_page(request):
     else:
         fichiers = dataimport.objects.filter(Assistantprofile__user=request.user)
 
-    context = {'form': form, 'fichiers': fichiers, 'fichier_id': fichier_id, 'user_is_expert': user_is_expert}
+    context = {'form': form, 'fichiers': fichiers, 'fichier_id': fichier_id, 'user_is_expert': user_is_expert,'expert_clients': expert_clients}
     return render(request, 'pfe/home.html', context)
 
 
@@ -477,8 +488,6 @@ from decimal import Decimal
 from collections import Counter
 from collections import defaultdict
 from decimal import Decimal
-from bson.decimal128 import Decimal128
-from bson import json_util
 import json
 import decimal
 def dashboard(request):
@@ -704,69 +713,136 @@ from reportlab.lib.styles import getSampleStyleSheet
 def export_csv(request):
     dataimport_id = request.GET.get('dataimport_id')
     if dataimport_id:
-        # Récupérer les données à exporter en CSV
         fichiers = dataimport.objects.get(pk=dataimport_id)
         factures_achat = Facture.objects.filter(fichier=fichiers, catéogorie='Achat')
         factures_vente = Facture.objects.filter(fichier=fichiers, catéogorie='Vente')
 
-        # Préparer les données pour le fichier CSV
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="export.csv"'
 
         writer = csv.writer(response)
         writer.writerow(['Date', 'Numero de Facture', 'Nom du Fournisseur', 'Nom du Client', 'Libelle', 'Prix Unitaire', 'Quantite', 'TVA', 'Total HT', 'Total TTC', 'Catégorie'])
 
-        for facture in factures_achat:
-            writer.writerow([facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.catéogorie])
+        def parse_date(date_str):
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y %H:%M:%S'):
+                try:
+                    return datetime.strptime(date_str, fmt)
+                except ValueError:
+                    pass
+            raise ValueError(f"No valid date format found for {date_str}")
 
-        # Ajouter une ligne vide pour séparer les deux types de factures
-        writer.writerow([])
+        def group_and_write_totals(writer, factures):
+            grouped = {}
+            for facture in factures:
+                facture_date = parse_date(facture.date)
+                month = facture_date.strftime('%Y-%m')
+                if month not in grouped:
+                    grouped[month] = []
+                grouped[month].append(facture)
 
-        for facture in factures_vente:
-            writer.writerow([facture.date, facture.numero_facture, facture.nom_fournisseur, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.tva, facture.total_hors_taxe, facture.total_ttc, facture.catéogorie])
+            for month, factures in grouped.items():
+                for facture in factures:
+                    writer.writerow([
+                        facture.date, facture.numero_facture, 
+                        facture.nom_fournisseur, facture.nom_client, 
+                        facture.libelle, Decimal(str(facture.prix_unitaire)), 
+                        facture.quantite, facture.tva, 
+                        Decimal(str(facture.total_hors_taxe)), 
+                        Decimal(str(facture.total_ttc)), 
+                        facture.catéogorie
+                    ])
+                total_ttc = sum(Decimal(str(f.total_ttc)) for f in factures)
+                writer.writerow([
+                    '', '', '', '', '', '', '', '', '', 
+                    'Total ' + calendar.month_name[int(month.split('-')[1])], total_ttc
+                ])
+
+        writer.writerow(['Factures d\'Achat'])
+        group_and_write_totals(writer, factures_achat)
+        
+        writer.writerow([])  # Ligne vide pour séparer les sections
+
+        writer.writerow(['Factures de Vente'])
+        group_and_write_totals(writer, factures_vente)
 
         return response
     else:
-        # Gérer le cas où dataimport_id est manquant
         return HttpResponse("ID de dataimport manquant.", status=400)
 from reportlab.platypus import Spacer
+import calendar
 
 def export_pdf(request):
-    dataimport_id = request.GET.get('dataimport_id')  # Récupérer dataimport_id depuis la requête GET
+    dataimport_id = request.GET.get('dataimport_id')
     if dataimport_id:
         fichiers = dataimport.objects.get(pk=dataimport_id)
         factures_achat = Facture.objects.filter(fichier=fichiers, catéogorie='Achat')
         factures_vente = Facture.objects.filter(fichier=fichiers, catéogorie='Vente')
         
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = 'attachment; filename="rapport_financiére.pdf"'
+        response['Content-Disposition'] = 'attachment; filename="rapport_financier.pdf"'
 
-        # Titre du PDF
-        title_text = "Rapport Financier annuelle "
+        title_text = "Rapport Financier Annuel"
         title_style = getSampleStyleSheet()['Title']
         title = Paragraph(title_text, title_style)
-        # Récupération du chiffre d'affaires total des ventes depuis la vue dashboard
 
-        # Création du PDF
         pdf = SimpleDocTemplate(response, pagesize=letter)
         elements = [title]
 
-        # Calcul du revenu total
-        total_revenue = sum(Decimal(str(facture.total_ttc)) for facture in factures_vente) - sum(Decimal(str(facture.total_ttc)) for facture in factures_achat)
+        # Calcul du chiffre d'affaires total des factures de vente
+        total_revenue_factures_vente = sum(Decimal(str(facture.total_ttc)) for facture in factures_vente)
 
-        # Ajout du paragraphe du revenu total
-        total_revenue_text = f"Le revenu total du client est : {total_revenue} DT"
+        # Convertir les valeurs total_ttc en Decimal
+        total_revenue = total_revenue_factures_vente - sum(Decimal(str(facture.total_ttc)) for facture in factures_achat)
+        total_revenue_text = f"Le chiffre d'affaires total est : {total_revenue} DT"
         total_revenue_style = getSampleStyleSheet()['Heading2']
         total_revenue_paragraph = Paragraph(total_revenue_text, total_revenue_style)
         elements.append(total_revenue_paragraph)
+        elements.append(Spacer(1, 20))  # Ajouter de l'espace entre les éléments
 
-        # Données et titres pour le tableau des factures d'achat
+        def group_and_calculate_totals(factures):
+            grouped = {}
+            for facture in factures:
+                facture_date = parse_date(facture.date)
+                month = facture_date.strftime('%Y-%m')
+                if month not in grouped:
+                    grouped[month] = []
+                grouped[month].append(facture)
+            return grouped
+
+        def parse_date(date_str):
+            for fmt in ('%Y-%m-%d', '%d/%m/%Y %H:%M:%S'):
+                try:
+                    return datetime.strptime(date_str, fmt)
+                except ValueError:
+                    pass
+            raise ValueError(f"No valid date format found for {date_str}")
+
+        def add_totals_to_table(data, factures):
+            grouped = group_and_calculate_totals(factures)
+            for month, factures in grouped.items():
+                for facture in factures:
+                    facture_date = parse_date(facture.date)
+                    data.append([
+                        facture_date.strftime('%d-%m-%Y'), 
+                        facture.numero_facture, 
+                        facture.nom_client if facture.catéogorie == 'Vente' else facture.nom_fournisseur,
+                        facture.libelle, 
+                        Decimal(str(facture.prix_unitaire)), 
+                        facture.quantite, 
+                        Decimal(str(facture.total_ttc))
+                    ])
+                total_ttc = sum(Decimal(str(f.total_ttc)) for f in factures)
+                data.append([
+                    'Total ' + calendar.month_name[int(month.split('-')[1])], '', '', '', '','', total_ttc
+                ])
+
         title_achat_text = "Factures d'Achat"
         title_achat_style = getSampleStyleSheet()['Heading1']
         title_achat = Paragraph(title_achat_text, title_achat_style)
         
         data_achat = [['Date', 'Num Facture', 'Fournisseur', 'Libelle', 'Prix Unitaire', 'Quantite', 'Total TTC']]
-        data_achat += [[facture.date, facture.numero_facture, facture.nom_fournisseur, facture.libelle, facture.prix_unitaire, facture.quantite, facture.total_ttc] for facture in factures_achat]
+        add_totals_to_table(data_achat, factures_achat)
+
         style_title = TableStyle([
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
@@ -779,27 +855,23 @@ def export_pdf(request):
         table_achat = Table(data_achat)
         table_achat.setStyle(style_title)
         
-        # Ajouter le titre et le tableau des factures d'achat
         elements.append(title_achat)
         elements.append(table_achat)
-        elements.append(Spacer(1, 20))  # Ajouter de l'espace entre les tableaux
+        elements.append(Spacer(1, 20))
 
-        # Données et titres pour le tableau des factures de vente
         title_vente_text = "Factures de Vente"
         title_vente_style = getSampleStyleSheet()['Heading1']
         title_vente = Paragraph(title_vente_text, title_vente_style)
 
         data_vente = [['Date', 'Num Facture', 'Client', 'Libelle', 'Prix Unitaire', 'Quantite', 'Total TTC']]
-        data_vente += [[facture.date, facture.numero_facture, facture.nom_client, facture.libelle, facture.prix_unitaire, facture.quantite, facture.total_ttc] for facture in factures_vente]
+        add_totals_to_table(data_vente, factures_vente)
 
         table_vente = Table(data_vente)
         table_vente.setStyle(style_title)
 
-        # Ajouter le titre et le tableau des factures de vente
         elements.append(title_vente)
         elements.append(table_vente)
 
-        # Construction du document PDF
         pdf.build(elements)
         
         return response
@@ -877,7 +949,100 @@ def dashboard1(request):
     
     return render(request, 'test.html') 
    
+def dashboard1(request):
+    dataimport_id = request.GET.get('dataimport_id')  # Récupérer l'ID depuis la requête GET
+    if dataimport_id:
+        try:
+            dataimport_instance = dataimport.objects.get(pk=dataimport_id)
+            
+            # Filtrer les faits par dataimport_instance
+            ventes = fait_vente.objects.filter(client_ent=dataimport_instance)
+            achats = fait_achat.objects.filter(client_ent=dataimport_instance)
 
+            # Calculer le nombre total de ventes et d'achats
+            nombre_ventes = ventes.count()
+            nombre_achats = achats.count()
+            
+            # Calculer le nombre de clients et de fournisseurs
+            nombre_clients = Dim_Client.objects.filter(fait_vente__client_ent=dataimport_instance).distinct().count()
+            nombre_fournisseurs = Dim_Fournisseur.objects.filter(fait_achat__client_ent=dataimport_instance).distinct().count()
+            
+            # Calculer le revenu total
+            total_revenue_ventes = ventes.aggregate(total=Sum('total_ttc'))['total'] or Decimal('0.00')
+            total_revenue_achats = achats.aggregate(total=Sum('total_ttc'))['total'] or Decimal('0.00')
+            total_revenue = total_revenue_ventes - total_revenue_achats
+            
+            # Comptage du nombre de fois que chaque produit apparaît dans les ventes
+            produits_counter = ventes.values('id_produit__libelle').annotate(total=Count('id_produit')).order_by()
+            total_produits = sum(item['total'] for item in produits_counter)
+            resultats_de_revenue_par_produit = [(item['id_produit__libelle'], (item['total'] / total_produits) * 100) for item in produits_counter]
+            
+            # Création des étiquettes pour les mois de l'année suivante
+            labels_mois_suivant = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+            
+            # Ventes et achats par mois
+            ventes_par_mois = defaultdict(int)
+            achats_par_mois = defaultdict(int)
+            for vente in ventes:
+                mois = vente.id_temps.mois
+                ventes_par_mois[mois] += 1
+            for achat in achats:
+                mois = achat.id_temps.mois
+                achats_par_mois[mois] += 1
+            ventes_par_mois_list = [ventes_par_mois.get(str(mois).zfill(2), 0) for mois in range(1, 13)]
+            achats_par_mois_list = [achats_par_mois.get(str(mois).zfill(2), 0) for mois in range(1, 13)]
+            ventes_json = json.dumps(ventes_par_mois_list)
+            achats_json = json.dumps(achats_par_mois_list)
+            
+            # Calcul du CA par mois
+            chiffre_affaires_par_mois = ventes.values('id_temps__mois').annotate(chiffre_affaire=Sum('CA')).order_by('id_temps__mois')
+            chiffre_affaires_liste = [chiffre_affaires_par_mois.get(str(mois).zfill(2), Decimal('0.00')) for mois in range(1, 13)]
+            
+            # Calcul du CA prévisionnel
+            facteur_croissance = Decimal('1.20')
+            chiffre_affaires_previsionnel_annee_suivante = [chiffre_affaire * facteur_croissance for chiffre_affaire in chiffre_affaires_liste]
+            
+            # CA par produit par mois
+            chiffre_affaires_par_produit_par_mois = defaultdict(lambda: defaultdict(Decimal))
+            for vente in ventes:
+                mois = vente.id_temps.mois
+                chiffre_affaire_produit = vente.total_ttc
+                produit_libelle = vente.id_produit.libelle
+                chiffre_affaires_par_produit_par_mois[mois][produit_libelle] += chiffre_affaire_produit
+
+            # Produit par vente
+            produits_ttc = ventes.values('id_produit__libelle').annotate(total_ttc=Sum('total_ttc')).order_by()
+            produits_ttc_list = [(item['id_produit__libelle'], item['total_ttc']) for item in produits_ttc]
+            
+            # Produit par achat
+            produits_ttc_achat = achats.values('id_produit__libelle').annotate(total_ttc=Sum('total_ttc')).order_by()
+            produits_ttc_achat_list = [(item['id_produit__libelle'], item['total_ttc']) for item in produits_ttc_achat]
+            
+            context = {
+                'produits_ttc1': produits_ttc_achat_list,
+                'produits_ttc': produits_ttc_list,
+                'chiffre_affaire_total': total_revenue,
+                'dataimport_instance': dataimport_instance,
+                'nombre_factures': nombre_ventes + nombre_achats,
+                'nom_client': dataimport_instance.client.clientName,
+                'nombre_fournisseurs': nombre_fournisseurs,
+                'nombre_clients': nombre_clients,
+                'nombre_achats': nombre_achats,
+                'nombre_ventes': nombre_ventes,
+                'ventes_par_mois': ventes_json,
+                'achats_par_mois': achats_json,
+                'total_revenue': total_revenue,
+                'resultats_de_revenue_par_produit': resultats_de_revenue_par_produit,
+                'labels_mois_suivant': labels_mois_suivant,
+                'dataimport_id': dataimport_id,
+                'chiffre_affaires_liste': chiffre_affaires_liste,
+                'chiffre_affaire_previsionnel': chiffre_affaires_previsionnel_annee_suivante,
+            }
+            return render(request, 'pfe/dashboard1.html', context)
+        except dataimport.DoesNotExist:
+            return HttpResponse("Dataimport avec cet ID non trouvé.", status=404)
+    else:
+        return HttpResponse("ID de dataimport vide.", status=400)
 
 
 #from fin.forms import OrderForm

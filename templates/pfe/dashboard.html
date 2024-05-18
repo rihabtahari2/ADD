@@ -35,14 +35,19 @@
         }
     </style>
     <body>
-        <h6>Dashboard pour le client : {{ nom_client }}</h6> 
+        <h3>Dashboard : {{ nom_client }}</h3> 
+        <style>
+            .centered-text {
+                text-align: center;
+            }
+        </style>
         <div class="data-link-container" style="position: absolute; top: 40px; right: 70px;">
             <a href="{% url 'données' fichier_id=dataimport_id %}"class="data-link"> 
                 <i class="fas fa-database icon"></i> Voir ses Données</a>
         </div> 
         <!-- Ajoutez le bouton Export -->
         <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#exportModal">
-            Exporter
+            Générer rapport
         </button>
         
         <!-- Modèle de la fenêtre modale -->
@@ -50,7 +55,7 @@
             <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
-                <h5 class="modal-title" id="exportModalLabel">Exporter les données</h5>
+                <h5 class="modal-title" id="exportModalLabel">Générer rapport</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>

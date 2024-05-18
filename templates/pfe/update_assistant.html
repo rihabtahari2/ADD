@@ -60,12 +60,11 @@
                                 <label for="clients" class="form-label">Clients</label>
                                 <select class="form-select"  multiple aria-label="Multiple select example" aria-label="Client select" name="clients">
                                     <option selected>Open this select menu</option>
-                                    {% for client in form.clients.field.queryset %}
+                                    {% for client in expert_clients %}
                                         <option value="{{ client.clientId }}">{{ client.clientName }}</option>
                                     {% endfor %}
                                 </select>
                             </div>
-
                             <button type="submit" class="btn btn-primary">Modifier</button>
                         </form>
                     </div>

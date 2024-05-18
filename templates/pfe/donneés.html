@@ -71,19 +71,6 @@
         <div>
             <ul class="list-inline"> <!-- Utilisez la classe list-inline de Bootstrap pour aligner les éléments sur une ligne -->
                 <li class="list-inline-item"><h5>{{ fichiers.nom }} de {{ fichiers.client }}</h5></li>
-                <li class="list-inline-item mr-2">
-                    <!-- Icône de favori -->
-                    <i id="favorite-icon" class="icon far fa-star"></i>
-                </li>
-                <li class="list-inline-item mr-2">
-                    <!-- Icône d'actualisation -->
-                    <a href="#" onclick="window.location.reload(); return false;">
-                        <i class="icon fas fa-sync-alt"></i>
-                    </a>
-                </li>
-                <li class="list-inline-item" id="saveButton" >
-                    <i class="icon fas fa-save"></i>
-                </li>
             </ul> 
         </div>        
         <input type="file" id="fileInput" style="display: none;" />    <!-- Bouton d'importation avec attribut data-id -->
