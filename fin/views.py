@@ -788,16 +788,12 @@ def export_pdf(request):
         pdf = SimpleDocTemplate(response, pagesize=letter)
         elements = [title]
 
-        # Calcul du chiffre d'affaires total des factures de vente
-        total_revenue_factures_vente = sum(Decimal(str(facture.total_ttc)) for facture in factures_vente)
-
         # Convertir les valeurs total_ttc en Decimal
-        total_revenue = total_revenue_factures_vente - sum(Decimal(str(facture.total_ttc)) for facture in factures_achat)
-        total_revenue_text = f"Le chiffre d'affaires total est : {total_revenue} DT"
+        total_revenue = sum(Decimal(str(facture.total_ttc)) for facture in factures_vente) - sum(Decimal(str(facture.total_ttc)) for facture in factures_achat)
+        total_revenue_text = f"Le revenu total du client est : {total_revenue} DT"
         total_revenue_style = getSampleStyleSheet()['Heading2']
         total_revenue_paragraph = Paragraph(total_revenue_text, total_revenue_style)
         elements.append(total_revenue_paragraph)
-        elements.append(Spacer(1, 20))  # Ajouter de l'espace entre les éléments
 
         def group_and_calculate_totals(factures):
             grouped = {}
