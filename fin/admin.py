@@ -13,5 +13,6 @@ admin.site.register(fait_vente)
 admin.site.register(fait_achat)
 admin.site.register(Dim_Fournisseur)
 admin.site.register(Dim_client_ent)
+admin.site.register(Dim_facture)
 class Données(ImportExportModelAdmin):
     list_display = ('Nom','Date','Valuer')

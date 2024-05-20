@@ -62,7 +62,9 @@ def load(data, dataimport_instance,dim_client_ent):
             libelle=row['Libellé'],
             defaults={'prix_unitaire': row['Prix unitaire']}
         )
-
+        num_fac, _ =Dim_facture.objects.get_or_create(
+            num_fac=row['Numéro de facture']
+        )
         # Remplir Dim_Temps
         date_facture = datetime.strptime(row['Date1'], '%d/%m/%Y %H:%M:%S')
         # Créer une instance de DimTemps
@@ -90,7 +92,9 @@ def load(data, dataimport_instance,dim_client_ent):
                 total_ttc=row['Total TTC'],
                 total_hors_taxe=row['Total hors taxe'],
                 quantite=row['Quantité'],
-                CA=ca
+                CA=ca,
+                id_fact=num_fac,
+                id_user=dataimport_instance,
             )
 
         # Remplir Dim_Fournisseur
@@ -109,8 +113,12 @@ def load(data, dataimport_instance,dim_client_ent):
                 total_ttc=row['Total TTC'],
                 total_hors_taxe=row['Total hors taxe'],
                 quantite=row['Quantité'],
-                
+                id_fact=num_fac,
+                id_user=dataimport_instance,
             )
+
+
+
 
 
 
