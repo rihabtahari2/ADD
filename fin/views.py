@@ -87,9 +87,6 @@ def logoutUser(request):
     logout(request)
     return redirect('singin')
 
-
-def navbar1 (request):
-    return render(request,'index1.html')
 @expert_required
 def list_client(request):
     # Vérifiez si l'utilisateur appartient au groupe "Expert"
@@ -169,17 +166,6 @@ def delete_client(request,pk):
         # Si la requête n'est pas de type POST, retourner une réponse 405 Méthode non autorisée
         return HttpResponse(status=405)
     
-def expl (request):
-    clients = client.objects.all()
-    context = {'clients': clients}
-    return render(request,'pfe/exple.html', context)
-
-def expl1 (request):
-   clients = client.objects.all()
-   paginator = Paginator(clients, 8)  # Paginer les clients avec 5 clients par page
-   page_number = request.GET.get('page')
-   page_obj = paginator.get_page(page_number)
-   return render(request,'pfe/expl1.html',{'page_obj': page_obj, 'clients': page_obj.object_list})
 @expert_required 
 def list_assistant(request):
     user_is_expert = request.user.groups.filter(name='Experts').exists()
@@ -430,11 +416,6 @@ def save_data(request):
             return JsonResponse({'message': 'Modifications enregistrées avec succès'}, status=200)
         except Exception as e:
             return JsonResponse({'message': str(e)}, status=400)
-
-
-def test(request):
-
-    return render(request, 'test.html')
 
 
 def import_file(request):
@@ -811,10 +792,23 @@ def export_CSV(request):
 
 
 
+def test(request):
 
+    return render(request, 'test.html')
 
+def navbar1 (request):
+    return render(request,'index1.html')
 
-
+def expl1 (request):
+   clients = client.objects.all()
+   paginator = Paginator(clients, 8)  # Paginer les clients avec 5 clients par page
+   page_number = request.GET.get('page')
+   page_obj = paginator.get_page(page_number)
+   return render(request,'pfe/expl1.html',{'page_obj': page_obj, 'clients': page_obj.object_list})
+def expl (request):
+    clients = client.objects.all()
+    context = {'clients': clients}
+    return render(request,'pfe/exple.html', context)
 
 def donn(request, fichier_id):
     fichiers = dataimport.objects.get(pk=fichier_id)
