@@ -220,7 +220,7 @@
                                 <td>{{ client.contact}}</td>
                                 <td>{{ client.username }}</td>  
                                 <td>    
-                                    <a href="#" class="view" title="View" data-toggle="tooltip"><i class="material-icons">&#xE417;</i></a>
+                                    
                                     <a href="{% url 'update_client' pk=client.pk %}" class="edit" title="Edit" data-toggle="tooltip"><i class="material-icons">&#xE254;</i></a>
                                     <a class="delete" title="Delete" data-toggle="tooltip"onclick="showConfirmationModal('{{ client.clientName }}',{{ client.pk }} )"><i class="material-icons">&#xE872;</i></a>
                                 </td>             

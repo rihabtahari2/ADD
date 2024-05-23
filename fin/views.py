@@ -14,7 +14,7 @@ from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.http.response import JsonResponse
 import csv
-from .etl import transform, load
+from .etl import transform, load,load_from_facture
 from .decorators import expert_required
 import pandas as pd
 from datetime import datetime
@@ -288,7 +288,8 @@ def home_page(request):
                 # Si c'est un fichier CSV, procédez au traitement
                 data = pd.read_csv(myfile, encoding='ISO-8859-1').rename(columns=lambda x: x.lower())
                 transformed_data = transform(data)
-                load(transformed_data, dataimport_instance,dim_client_ent)
+                load(transformed_data, dataimport_instance)
+                load_from_facture(dataimport_instance, dim_client_ent)
                 return redirect('données', fichier_id=fichier_id)
             else:
                 # Si ce n'est pas un fichier CSV, renvoyez un message d'erreur
@@ -857,7 +858,53 @@ def dashboard(request):
             
             # Calculer le revenu total
             total_revenue = sum(Decimal(str(facture.total_ttc)) for facture in factures if facture.catéogorie== 'Vente') - sum(Decimal(str(facture.total_ttc)) for facture in factures if facture.catéogorie== 'Achat')
+            #les 5 produit le plus vendu 
+            produits_counter = defaultdict(int)
+            for facture in factures.filter(catéogorie='Vente'):
+                produits_counter[facture.libelle] += facture.quantite
             
+            produits_plus_vendus = sorted(produits_counter.items(), key=lambda x: x[1], reverse=True)[:5]
+            labels_produits = [produit for produit, _ in produits_plus_vendus]
+            quantites_produits = [quantite for _, quantite in produits_plus_vendus]
+    
+            # Préparer les données pour le graphique
+            labels_produits_json = json.dumps(labels_produits)
+            quantites_produits_json = json.dumps(quantites_produits)
+            #//////////////////////////les 5 produit le plus vendu 
+            produits_counter1 = defaultdict(int)
+            for facture in factures.filter(catéogorie='Achat'):
+                produits_counter1[facture.libelle] += facture.quantite
+            
+            produits_plus_vendus = sorted(produits_counter1.items(), key=lambda x: x[1], reverse=True)[:5]
+            labels_produits1 = [produit for produit, _ in produits_plus_vendus]
+            quantites_produits1 = [quantite for _, quantite in produits_plus_vendus]
+    
+            # Préparer les données pour le graphique
+            labels_produits_json1 = json.dumps(labels_produits1)
+            quantites_produits_json1 = json.dumps(quantites_produits1)
+            # Calculer les totaux TTC des produits les plus vendus
+            totals_ttc_par_produit = defaultdict(Decimal)
+            for facture in factures.filter(catéogorie='Vente'):
+                if facture.libelle in labels_produits:
+                    totals_ttc_par_produit[facture.libelle] += Decimal(str(facture.total_ttc))
+
+            # Préparer les données pour le graphique
+            labels_produits_json = json.dumps(labels_produits)
+            ttc_produits_json = json.dumps([float(totals_ttc_par_produit[produit]) for produit in labels_produits])
+
+            # Calculer le chiffre d'affaires par année
+            chiffre_affaires_par_annee = defaultdict(Decimal)
+            for facture in factures.filter(catéogorie='Vente'):
+                annee = datetime.strptime(facture.date, '%d/%m/%Y %H:%M:%S').year
+                chiffre_affaire_vente = Decimal(str(facture.prix_unitaire)) * Decimal(facture.quantite)
+                chiffre_affaires_par_annee[annee] += chiffre_affaire_vente
+
+            # Préparer les données pour le graphique
+            annees = list(chiffre_affaires_par_annee.keys())
+            chiffres_affaires = [float(chiffre_affaires_par_annee[annee]) for annee in annees]
+            
+            annees_json = json.dumps(annees)
+            chiffres_affaires_json = json.dumps(chiffres_affaires)
             # Comptage du nombre de fois que chaque produit apparaît dans la facture
             total_produits = 0
             produits_counter = defaultdict(int)
@@ -1012,6 +1059,14 @@ def dashboard(request):
                 'dataimport_id':dataimport_id,
                 'chiffre_affaires_liste':chiffre_affaires_liste,
                 'chiffre_affaire_previsionnel':chiffre_affaire_previsionnel,
+                'labels_produits': labels_produits_json,
+                'quantites_produits': quantites_produits_json,
+                'ttc_produits': ttc_produits_json,
+                'annees': annees_json,
+                'chiffres_affaires': chiffres_affaires_json,
+                'labels_produits1': labels_produits_json1,
+                'quantites_produits1': quantites_produits_json1,
+                
                 
             }
             return render(request, 'pfe/dashboard.html', context)

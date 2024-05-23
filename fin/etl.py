@@ -1,5 +1,5 @@
 # etl.py
-
+from decimal import Decimal, InvalidOperation
 import csv
 from fin.models import *
 from datetime import datetime
@@ -56,73 +56,8 @@ def transform(data):
     return df
 
 # Fonction de chargement
-def load(data, dataimport_instance,dim_client_ent):
+def load(data, dataimport_instance):
     for index, row in data.iterrows():
-        produit, _ = Dim_Produit.objects.get_or_create(
-            libelle=row['Libellé'],
-            defaults={'prix_unitaire': row['Prix unitaire']}
-        )
-        num_fac, _ =Dim_facture.objects.get_or_create(
-            num_fac=row['Numéro de facture']
-        )
-        # Remplir Dim_Temps
-        date_facture = datetime.strptime(row['Date1'], '%d/%m/%Y %H:%M:%S')
-        # Créer une instance de DimTemps
-        temps, _ = Dim_Temps.objects.get_or_create(
-            id_Tempss=date_facture,
-            jour=date_facture.day,
-            mois=date_facture.month,
-            annee=date_facture.year
-        )
-        # Remplir Dim_Client
-        if pd.notna(row['Nom du client']):
-            # Créer une instance de DimClient
-            client, _ = Dim_Client.objects.get_or_create(
-                nom_client=row['Nom du client']
-            )
-            ca = row['Prix unitaire'] * row['Quantité']
-            # les jointure
-            # Créer une instance de fait_vente en utilisant les instances récupérées
-            nouvelle_vente = fait_vente.objects.create(
-                id_client=client,
-                id_produit=produit,
-                id_temps=temps,
-                client_ent=dim_client_ent,
-                TVA=row['TVA'],
-                total_ttc=row['Total TTC'],
-                total_hors_taxe=row['Total hors taxe'],
-                quantite=row['Quantité'],
-                CA=ca,
-                id_fact=num_fac,
-                id_user=dataimport_instance,
-            )
-
-        # Remplir Dim_Fournisseur
-        if pd.notna(row['Nom du fournisseur']):
-            # Créer une instance de DimFournisseur
-            fournisseur, _ = Dim_Fournisseur.objects.get_or_create(
-                nom_fournisseur=row['Nom du fournisseur']
-            )
-             # Créer une instance de fait_vente en utilisant les instances récupérées
-            nouvelle_achat = fait_achat.objects.create(
-                id_fournisseur=fournisseur,
-                id_produit=produit,
-                id_temps=temps,
-                client_ent=dim_client_ent,
-                TVA=row['TVA'],
-                total_ttc=row['Total TTC'],
-                total_hors_taxe=row['Total hors taxe'],
-                quantite=row['Quantité'],
-                id_fact=num_fac,
-                id_user=dataimport_instance,
-            )
-
-
-
-
-
-
-
 
         facture = Facture(fichier= dataimport_instance ,date=row['Date1'], numero_facture=row['Numéro de facture'],
                            nom_fournisseur=row['Nom du fournisseur'], nom_client=row['Nom du client'],
@@ -130,9 +65,87 @@ def load(data, dataimport_instance,dim_client_ent):
                          quantite=row['Quantité'],tva=row['TVA'],
                          total_hors_taxe=row['Total hors taxe'],catéogorie=row['Catégorie'])
         facture.save()
- 
 
-# Fermeture de la connexion
-client.close()
+def load_from_facture(dataimport_instance, dim_client_ent):
+    factures = Facture.objects.filter(fichier=dataimport_instance)
+
+    for facture in factures:
+        try:
+            # Convertir les valeurs Decimal128 en chaînes, puis en Decimal
+            prix_unitaire = Decimal(str(facture.prix_unitaire))
+            quantite = Decimal(str(facture.quantite))
+            tva = Decimal(str(facture.tva))
+            total_ttc = Decimal(str(facture.total_ttc))
+            total_hors_taxe = Decimal(str(facture.total_hors_taxe))
+        except InvalidOperation:
+            # Si une des valeurs ne peut pas être convertie en Decimal, continuez à la facture suivante
+            continue
+
+        # Remplir Dim_Produit
+        produit, _ = Dim_Produit.objects.get_or_create(
+            libelle=facture.libelle,
+            defaults={'prix_unitaire': prix_unitaire}
+        )
+
+        # Remplir Dim_facture
+        num_fac, _ = Dim_facture.objects.get_or_create(
+            num_fac=facture.numero_facture
+        )
+
+        # Remplir Dim_Temps
+        date_facture = datetime.strptime(facture.date, '%d/%m/%Y %H:%M:%S')
+        temps, _ = Dim_Temps.objects.get_or_create(
+            id_Tempss=str(date_facture),
+            defaults={
+                'jour': str(date_facture.day),
+                'mois': str(date_facture.month),
+                'annee': date_facture.year
+            }
+        )
+
+        # Remplir Dim_Client
+        if facture.nom_client:
+            client, _ = Dim_Client.objects.get_or_create(
+                nom_client=facture.nom_client
+            )
+
+            # Calcul du chiffre d'affaires
+            ca = prix_unitaire * quantite
+
+            # Créer une instance de fait_vente
+            fait_vente.objects.create(
+                id_client=client,
+                id_produit=produit,
+                id_temps=temps,
+                client_ent=dim_client_ent,
+                TVA=tva,
+                total_ttc=total_ttc,
+                total_hors_taxe=total_hors_taxe,
+                quantite=facture.quantite,
+                CA=ca,
+                id_fact=num_fac,
+                id_user=dataimport_instance,
+            )
+
+        # Remplir Dim_Fournisseur
+        if facture.nom_fournisseur:
+            fournisseur, _ = Dim_Fournisseur.objects.get_or_create(
+                nom_fournisseur=facture.nom_fournisseur
+            )
+
+            # Créer une instance de fait_achat
+            fait_achat.objects.create(
+                id_fournisseur=fournisseur,
+                id_produit=produit,
+                id_temps=temps,
+                client_ent=dim_client_ent,
+                TVA=tva,
+                total_ttc=total_ttc,
+                total_hors_taxe=total_hors_taxe,
+                quantite=facture.quantite,
+                id_fact=num_fac,
+                id_user=dataimport_instance,
+            )
+
 
 

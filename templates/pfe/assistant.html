@@ -220,7 +220,7 @@
                                 <a class="btn btn-primary" href="{% url 'client_assistant' pk=user.pk %}">Affecter</a> 
                                 </td>-->
                                 <td>    
-                                    <a href="#" class="view" title="View" data-toggle="tooltip"><i class="material-icons">&#xE417;</i></a>
+                                    
                                     <a href="{% url 'update_assistant' assistant.user.id %}" class="edit" title="Edit" data-toggle="tooltip"><i class="material-icons">&#xE254;</i></a>
                                     <a class="delete" title="Delete" data-toggle="tooltip"onclick="showConfirmationModal('{{ assistant.user.username }}', {{ assistant.user.pk }})"><i class="material-icons">&#xE872;</i></a>
                                 </td>             

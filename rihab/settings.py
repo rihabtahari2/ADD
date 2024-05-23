@@ -46,7 +46,13 @@ INSTALLED_APPS = [
     'djongo',
     'import_export',
     'fin.apps.FinConfig',
+    'django_mongoengine',
+    'django_mongoengine.mongo_admin',
 ]
+MONGO_DATABASE_NAME = 'rihab'
+
+from mongoengine import connect
+connect(MONGO_DATABASE_NAME)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -100,7 +106,16 @@ DATABASES = {
   }
  }
 
-
+MONGODB_DATABASES = {
+    'default': {
+        'name': 'rihab',  # Le nom de votre base de données MongoDB
+        'host': 'localhost',  # Adresse de l'hôte MongoDB
+        'port': 27017,  # Port MongoDB par défaut
+        'username': '',  # Laisser vide si l'authentification n'est pas nécessaire
+        'password': '',  # Laisser vide si l'authentification n'est pas nécessaire
+        'tz_aware': True,  # Si vous voulez que MongoDB soit conscient des fuseaux horaires
+    },
+}
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
 

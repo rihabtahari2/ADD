@@ -159,3 +159,64 @@ class fait_achat(models.Model):
     id_fact=models.ForeignKey(Dim_facture, on_delete=models.CASCADE,default="")
     def __str__(self):
         return str(self.total_ttc)
+
+
+from mongoengine import Document, StringField, DecimalField, IntField, ReferenceField, ListField
+
+class Dim_Client1(Document):
+    nom = StringField(max_length=100, required=True)
+    # Ajoutez les autres champs nécessaires
+
+class Dim_Produit1(Document):
+    nom = StringField(max_length=100, required=True)
+    # Ajoutez les autres champs nécessaires
+
+class Dim_Temps1(Document):
+    date = StringField(max_length=100, required=True)
+    # Ajoutez les autres champs nécessaires
+
+class Dim_client_ent1(Document):
+    entreprise = StringField(max_length=100, required=True)
+    # Ajoutez les autres champs nécessaires
+
+class dataimport1(Document):
+    utilisateur = StringField(max_length=100, required=True)
+    # Ajoutez les autres champs nécessaires
+
+class Dim_facture1(Document):
+    facture = StringField(max_length=100, required=True)
+    # Ajoutez les autres champs nécessaires
+
+class factvente(Document):
+    id_client = ReferenceField(Dim_Client1, required=True)
+    id_produit = ReferenceField(Dim_Produit1, required=True)
+    id_temps = ReferenceField(Dim_Temps1, required=True)
+    client_ent = ReferenceField(Dim_client_ent1, required=True)
+    TVA = DecimalField(precision=2, required=True)
+    total_ttc = DecimalField(precision=2, required=True)
+    total_hors_taxe = DecimalField(precision=2, required=True)
+    quantite = IntField(required=True)
+    CA = DecimalField(precision=2, required=True, default=0.00)
+    id_user = ReferenceField(dataimport1, required=True)
+    id_fact = ReferenceField(Dim_facture1, required=True)
+
+    def __str__(self):
+        return str(self.total_ttc)
+
+# Si vous avez besoin de stocker des listes de références
+
+class factvente_liste(Document):
+    id_clients = ListField(ReferenceField(Dim_Client1), required=True)
+    id_users = ListField(ReferenceField(dataimport1), required=True)
+    id_facts = ListField(ReferenceField(Dim_facture1), required=True)
+    id_produit = ReferenceField(Dim_Produit1, required=True)
+    id_temps = ReferenceField(Dim_Temps1, required=True)
+    client_ent = ReferenceField(Dim_client_ent1, required=True)
+    TVA = DecimalField(precision=2, required=True)
+    total_ttc = DecimalField(precision=2, required=True)
+    total_hors_taxe = DecimalField(precision=2, required=True)
+    quantite = IntField(required=True)
+    CA = DecimalField(precision=2, required=True, default=0.00)
+
+    def __str__(self):
+        return str(self.total_ttc)

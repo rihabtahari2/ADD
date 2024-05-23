@@ -131,7 +131,15 @@
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
                             <h6 class="mb-0">Produits</h6>
-                            <canvas id="my3Chart"></canvas>
+                            <canvas id="produitsChart"></canvas>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                            <h6 class="mb-0">Produits</h6>
+                            <canvas id="produitsChart2"></canvas>
                     </div>
                 </div>
             </div>
@@ -163,15 +171,15 @@
                     <div class="d-flex align-items-center justify-content-between mb-4">
                     </div>
                     <h6 class="mb-0">Produits par Vente</h6>
-                        <canvas id="barChart"></canvas>
+                    <canvas id="produitsChart1"></canvas>
                 </div>
             </div>
             <div class="col-md-6">
                 <div class="bg-white rounded text-center">
                     <div class="d-flex align-items-center justify-content-between mb-4">
                     </div>
-                    <h6 class="mb-0">Produits par Achat</h6>
-                        <canvas id="bar1Chart"></canvas>
+                    <h6 class="mb-0">Chiffre d'affaire par années</h6>
+                    <canvas id="chiffreAffairesChart"></canvas>
                 </div>
             </div>
        </div>
@@ -590,7 +598,154 @@
          </script>
     </script>
    
-    
+        <canvas id="produitsChart"></canvas>
+
+    <script>
+        var ctx66 = document.getElementById('produitsChart').getContext('2d');
+        var produitsChart = new Chart(ctx66, {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels_produits|safe }},
+                datasets: [{
+                    label: 'Quantité Vendue',
+                    data: {{ quantites_produits|safe }},
+                    backgroundColor: [
+                        'rgba(128, 128, 0, 0.5)', // Olive
+                        'rgba(0, 128, 128, 0.5)', // Sarcelle
+                        'rgba(255, 206, 86, 0.5)', // Jaune
+                        'rgba(75, 192, 192, 0.5)', // Vert
+                        'rgba(153, 102, 255, 0.5)', // Violet
+                    ],
+                    borderColor: [
+                        'rgba(128, 128, 0, 0.5)', // Olive
+                        'rgba(0, 128, 128, 0.5)', // Sarcelle
+                        'rgba(255, 206, 86, 0.5)', // Jaune
+                        'rgba(75, 192, 192, 0.5)', // Vert
+                        'rgba(153, 102, 255, 0.5)', // Violet
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Top 5 Produits Les Plus Vendus'
+                    }
+                }
+            }
+        });
+    </script>
+    </script>
+    <canvas id="produitsChart2"></canvas>
+
+    <script>
+        var ctx65 = document.getElementById('produitsChart2').getContext('2d');
+        var produitsChart = new Chart(ctx65, {
+            type: 'doughnut',
+            data: {
+                labels: {{ labels_produits1|safe }},
+                datasets: [{
+                    label: 'Quantité Vendue',
+                    data: {{ quantites_produits1|safe }},
+                    backgroundColor: [
+                    'rgba(255, 159, 64, 0.5)', // Orange
+                    'rgba(128, 0, 128, 0.5)', // Pourpre
+                    'rgba(0, 0, 128, 0.5)', // Bleu foncé
+                    'rgba(128, 0, 0, 0.5)', // Rouge foncé
+                    'rgba(255, 99, 132, 0.5)', // Rouge
+                    'rgba(54, 162, 235, 0.5)', // Bleu
+                    ],
+                    borderColor: [
+                    'rgba(255, 159, 64, 0.5)', // Orange
+                    'rgba(128, 0, 128, 0.5)', // Pourpre
+                    'rgba(0, 0, 128, 0.5)', // Bleu foncé
+                    'rgba(128, 0, 0, 0.5)', // Rouge foncé
+                    'rgba(255, 99, 132, 0.5)', // Rouge
+                    'rgba(54, 162, 235, 0.5)', // Bleu
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: 'Top 5 Produits Les Plus Achetés'
+                    }
+                }
+            }
+        });
+    </script>
+    <canvas id="produitsChart1" width="400" height="200"></canvas>
+    <script>
+        var ctx44 = document.getElementById('produitsChart1').getContext('2d');
+        var produitsChart = new Chart(ctx44, {
+            type: 'bar',
+            data: {
+                labels: {{ labels_produits|safe }},
+                datasets: [{
+                    label: 'Total TTC',
+                    data: {{ ttc_produits|safe }},
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
+            },
+                options: {
+                     scales: {
+                         y: {
+                             stacked: true,  // Empiler les valeurs sur l'axe y
+                             beginAtZero: true,
+                             title: {
+                                 display: true,
+                                 text: 'Total TTC (en DT)'
+                             }
+                         },
+                         x: {
+                             stacked: true,  // Empiler les valeurs sur l'axe x
+                             title: {
+                                 display: true,
+                                 text: 'Produits'
+                             }
+                         }
+                     }
+                         
+                }
+        });
+    </script>
+    <canvas id="chiffreAffairesChart" width="400" height="200"></canvas>
+    <script>
+        var ctxi = document.getElementById('chiffreAffairesChart').getContext('2d');
+        var chiffreAffairesChart = new Chart(ctxi, {
+            type: 'bar',
+            data: {
+                labels: {{ annees|safe }},
+                datasets: [{
+                    label: 'Chiffre d\'Affaires',
+                    data: {{ chiffres_affaires|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    </script>
       
     
 {% endblock %}
