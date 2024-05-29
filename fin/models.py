@@ -68,7 +68,6 @@ class dataimport(models.Model):
 from datetime import datetime     
 class Facture(models.Model):
     id = models.AutoField(primary_key=True)
-    Date = models.DateTimeField(default=datetime(2022, 1, 1, 0, 0, 0))
     date=models.CharField(max_length=50,default=" ")
     fichier = models.ForeignKey(dataimport, on_delete=models.CASCADE,default="")
     numero_facture = models.CharField(max_length=100)
@@ -159,64 +158,78 @@ class fait_achat(models.Model):
     id_fact=models.ForeignKey(Dim_facture, on_delete=models.CASCADE,default="")
     def __str__(self):
         return str(self.total_ttc)
+    
 
+from mongoengine import Document, fields
 
-from mongoengine import Document, StringField, DecimalField, IntField, ReferenceField, ListField
+class jjjj(Document):
+    username = fields.StringField(required=True, max_length=50)
+    password = fields.StringField(required=True)
 
-class Dim_Client1(Document):
-    nom = StringField(max_length=100, required=True)
-    # Ajoutez les autres champs nécessaires
+from mongoengine import Document, StringField, DecimalField, IntField, EmailField, ReferenceField, CASCADE
 
-class Dim_Produit1(Document):
-    nom = StringField(max_length=100, required=True)
-    # Ajoutez les autres champs nécessaires
+class Dimfacture(Document):
+    num_fac = StringField(max_length=500, default=' ')
+    def __str__(self):
+        return self.num_fac
 
-class Dim_Temps1(Document):
-    date = StringField(max_length=100, required=True)
-    # Ajoutez les autres champs nécessaires
+class Dimclient_ent(Document):
+    nom = StringField(max_length=500, required=True)
+    Adresse = StringField(max_length=500, default=' ')
+    Activity = StringField(max_length=500, default=' ')
+    email = EmailField(max_length=254, default='example@example.com')
+    def __str__(self):
+        return self.nom
 
-class Dim_client_ent1(Document):
-    entreprise = StringField(max_length=100, required=True)
-    # Ajoutez les autres champs nécessaires
+class DimProduit(Document):
+    libelle = StringField(max_length=100, required=True)
+    prix_unitaire = DecimalField(max_digits=10, decimal_places=2, required=True)
+    def __str__(self):
+        return self.libelle
 
-class dataimport1(Document):
-    utilisateur = StringField(max_length=100, required=True)
-    # Ajoutez les autres champs nécessaires
+class DimTemps(Document):
+    id_Tempss = StringField(max_length=500, required=True)
+    jour = StringField(max_length=2, required=True)
+    mois = StringField(max_length=2, required=True)
+    annee = IntField(required=True)
+    def __str__(self):
+        return self.id_Tempss
 
-class Dim_facture1(Document):
-    facture = StringField(max_length=100, required=True)
-    # Ajoutez les autres champs nécessaires
+class DimClient(Document):
+    nom_client = StringField(max_length=100, required=True)
+    def __str__(self):
+        return self.nom_client
 
-class factvente(Document):
-    id_client = ReferenceField(Dim_Client1, required=True)
-    id_produit = ReferenceField(Dim_Produit1, required=True)
-    id_temps = ReferenceField(Dim_Temps1, required=True)
-    client_ent = ReferenceField(Dim_client_ent1, required=True)
-    TVA = DecimalField(precision=2, required=True)
-    total_ttc = DecimalField(precision=2, required=True)
-    total_hors_taxe = DecimalField(precision=2, required=True)
+class faitvente(Document):
+    id_client = ReferenceField(DimClient, reverse_delete_rule=CASCADE)
+    id_produit = ReferenceField(DimProduit, reverse_delete_rule=CASCADE)
+    id_temps = ReferenceField(DimTemps, reverse_delete_rule=CASCADE)
+    client_ent = ReferenceField(Dimclient_ent, reverse_delete_rule=CASCADE, default="")
+    TVA = DecimalField(max_digits=10, decimal_places=2, required=True)
+    total_ttc = DecimalField(max_digits=10, decimal_places=2, required=True)
+    total_hors_taxe = DecimalField(max_digits=10, decimal_places=2, required=True)
     quantite = IntField(required=True)
-    CA = DecimalField(precision=2, required=True, default=0.00)
-    id_user = ReferenceField(dataimport1, required=True)
-    id_fact = ReferenceField(Dim_facture1, required=True)
-
+    CA = DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    id_fact = ReferenceField(Dimfacture, reverse_delete_rule=CASCADE, default="")
+    id_user = IntField(required=True)
     def __str__(self):
         return str(self.total_ttc)
 
-# Si vous avez besoin de stocker des listes de références
+class DimFournisseur(Document):
+    nom_fournisseur = StringField(max_length=100, required=True)
+    def __str__(self):
+        return self.nom_fournisseur
 
-class factvente_liste(Document):
-    id_clients = ListField(ReferenceField(Dim_Client1), required=True)
-    id_users = ListField(ReferenceField(dataimport1), required=True)
-    id_facts = ListField(ReferenceField(Dim_facture1), required=True)
-    id_produit = ReferenceField(Dim_Produit1, required=True)
-    id_temps = ReferenceField(Dim_Temps1, required=True)
-    client_ent = ReferenceField(Dim_client_ent1, required=True)
-    TVA = DecimalField(precision=2, required=True)
-    total_ttc = DecimalField(precision=2, required=True)
-    total_hors_taxe = DecimalField(precision=2, required=True)
+class faitachat(Document):
+    id_produit = ReferenceField(DimProduit, reverse_delete_rule=CASCADE)
+    id_fournisseur = ReferenceField(DimFournisseur, reverse_delete_rule=CASCADE)
+    id_temps = ReferenceField(DimTemps, reverse_delete_rule=CASCADE)
+    client_ent = ReferenceField(Dimclient_ent, reverse_delete_rule=CASCADE, default="")
+    TVA = DecimalField(max_digits=10, decimal_places=2, required=True)
+    total_ttc = DecimalField(max_digits=10, decimal_places=2, required=True)
+    total_hors_taxe = DecimalField(max_digits=10, decimal_places=2, required=True)
     quantite = IntField(required=True)
-    CA = DecimalField(precision=2, required=True, default=0.00)
-
+    id_fact = ReferenceField(Dimfacture, reverse_delete_rule=CASCADE, default="")
+    id_user = IntField(required=True)
     def __str__(self):
         return str(self.total_ttc)

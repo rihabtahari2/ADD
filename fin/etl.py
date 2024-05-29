@@ -30,6 +30,7 @@ def determiner_categorie(row):
 # Fonction de transformation
 def transform(data):
     df = pd.DataFrame(data)
+    print(df)
     def convertir_date(date_str):
         try:
             date_obj = pd.to_datetime(date_str, dayfirst=True)  # Analyse de la date en spécifiant que le jour est en premier
@@ -40,7 +41,7 @@ def transform(data):
     print(df)
     df['tva'] = df['tva'].str.rstrip('%').astype(float) / 100
      # Utilisez replace sur l'ensemble du DataFrame en spécifiant regex=True
-    df = df.replace(r'[;*+_\'"=)(|{}!?#[\]].', '', regex=True)
+    df = df.replace(r'[;*+_\'"=)(|{}!?#[\]].','', regex=True)
     df['time'] = pd.to_datetime(df['time'])
     # Fusionner les colonnes 'Date' et 'Heure' en une seule colonne 'Date'
     df['Date1'] = df['date']+ ' ' + df['time'].dt.strftime('%H:%M:%S')
@@ -53,6 +54,7 @@ def transform(data):
              'Quantité', 'TVA', 'Total hors taxe', 'Total TTC']]  
     df['Catégorie'] = df.apply(determiner_categorie, axis=1)
     print(df)
+    
     return df
 
 # Fonction de chargement
@@ -66,86 +68,93 @@ def load(data, dataimport_instance):
                          total_hors_taxe=row['Total hors taxe'],catéogorie=row['Catégorie'])
         facture.save()
 
-def load_from_facture(dataimport_instance, dim_client_ent):
+def load_from_facture(dataimport_instance, user_id):
     factures = Facture.objects.filter(fichier=dataimport_instance)
-
-    for facture in factures:
-        try:
-            # Convertir les valeurs Decimal128 en chaînes, puis en Decimal
-            prix_unitaire = Decimal(str(facture.prix_unitaire))
-            quantite = Decimal(str(facture.quantite))
-            tva = Decimal(str(facture.tva))
-            total_ttc = Decimal(str(facture.total_ttc))
-            total_hors_taxe = Decimal(str(facture.total_hors_taxe))
-        except InvalidOperation:
-            # Si une des valeurs ne peut pas être convertie en Decimal, continuez à la facture suivante
-            continue
-
-        # Remplir Dim_Produit
-        produit, _ = Dim_Produit.objects.get_or_create(
-            libelle=facture.libelle,
-            defaults={'prix_unitaire': prix_unitaire}
+    
+    # Charger les données de Dim_client_ent
+    for client_ent_django in Dim_client_ent.objects.all():
+        # Créer et sauvegarder chaque instance de Dimclient_ent
+        dim_client_ent = Dimclient_ent(
+            nom=client_ent_django.nom,
+            Adresse=client_ent_django.Adresse,
+            Activity=client_ent_django.Activity,
+            email=client_ent_django.email
         )
+        dim_client_ent.save()
 
-        # Remplir Dim_facture
-        num_fac, _ = Dim_facture.objects.get_or_create(
-            num_fac=facture.numero_facture
+    # Charger les données de Facture
+    for facture_django in factures:
+        # Créer et sauvegarder chaque instance de Dimfacture
+        dim_facture = Dimfacture(
+            num_fac=facture_django.numero_facture
         )
+        dim_facture.save()
 
-        # Remplir Dim_Temps
-        date_facture = datetime.strptime(facture.date, '%d/%m/%Y %H:%M:%S')
-        temps, _ = Dim_Temps.objects.get_or_create(
-            id_Tempss=str(date_facture),
-            defaults={
-                'jour': str(date_facture.day),
-                'mois': str(date_facture.month),
-                'annee': date_facture.year
-            }
+        # Créer et sauvegarder chaque instance de DimProduit
+        dim_produit = DimProduit(
+            libelle=facture_django.libelle,
+            prix_unitaire=facture_django.prix_unitaire
         )
+        dim_produit.save()
 
-        # Remplir Dim_Client
-        if facture.nom_client:
-            client, _ = Dim_Client.objects.get_or_create(
-                nom_client=facture.nom_client
-            )
+        # Créer et sauvegarder chaque instance de DimClient
+        dim_client = DimClient(
+            nom_client=facture_django.nom_client
+        )
+        dim_client.save()
 
-            # Calcul du chiffre d'affaires
-            ca = prix_unitaire * quantite
+        # Créer et sauvegarder chaque instance de DimFournisseur
+        dim_fournisseur = DimFournisseur(
+            nom_fournisseur=facture_django.nom_fournisseur
+        )
+        dim_fournisseur.save()
 
-            # Créer une instance de fait_vente
-            fait_vente.objects.create(
-                id_client=client,
-                id_produit=produit,
-                id_temps=temps,
+        # Conversion de la chaîne de date en datetime
+        date_string = f"{facture_django.date}"  # Ajoutez une heure fixe pour éviter les erreurs de conversion
+        date_facture = datetime.strptime(date_string, '%d/%m/%Y %H:%M:%S')
+
+        # Extraire le jour, le mois et l'année
+        jour = str(date_facture.day)
+        mois = str(date_facture.month)
+        annee = str(date_facture.year)
+
+        # Créer et sauvegarder chaque instance de DimTemps
+        dim_temps = DimTemps(
+            id_Tempss=f"{jour}/{mois}/{annee}",
+            jour=jour,
+            mois=mois,
+            annee=annee
+        )
+        dim_temps.save()
+
+        if facture_django.catéogorie == 'Vente':
+            # Créer et sauvegarder chaque instance de fait_vente
+            fait_vente = faitvente(
+                id_client=dim_client,
+                id_produit=dim_produit,
+                id_temps=dim_temps,
                 client_ent=dim_client_ent,
-                TVA=tva,
-                total_ttc=total_ttc,
-                total_hors_taxe=total_hors_taxe,
-                quantite=facture.quantite,
-                CA=ca,
-                id_fact=num_fac,
-                id_user=dataimport_instance,
+                TVA=facture_django.tva,
+                total_ttc=facture_django.total_ttc,
+                total_hors_taxe=facture_django.total_hors_taxe,
+                quantite=facture_django.quantite,
+                CA=Decimal(facture_django.quantite) * facture_django.prix_unitaire.to_decimal(),
+                id_fact=dim_facture,
+                id_user=user_id  # Ajouter l'ID de l'utilisateur
             )
-
-        # Remplir Dim_Fournisseur
-        if facture.nom_fournisseur:
-            fournisseur, _ = Dim_Fournisseur.objects.get_or_create(
-                nom_fournisseur=facture.nom_fournisseur
-            )
-
-            # Créer une instance de fait_achat
-            fait_achat.objects.create(
-                id_fournisseur=fournisseur,
-                id_produit=produit,
-                id_temps=temps,
+            fait_vente.save()
+        elif facture_django.catéogorie == 'Achat':
+            # Créer et sauvegarder chaque instance de fait_achat
+            fait_achat = faitachat(
+                id_produit=dim_produit,
+                id_fournisseur=dim_fournisseur,
+                id_temps=dim_temps,
                 client_ent=dim_client_ent,
-                TVA=tva,
-                total_ttc=total_ttc,
-                total_hors_taxe=total_hors_taxe,
-                quantite=facture.quantite,
-                id_fact=num_fac,
-                id_user=dataimport_instance,
+                TVA=facture_django.tva,
+                total_ttc=facture_django.total_ttc,
+                total_hors_taxe=facture_django.total_hors_taxe,
+                quantite=facture_django.quantite,
+                id_fact=dim_facture,
+                id_user=user_id  # Ajouter l'ID de l'utilisateur
             )
-
-
-
+            fait_achat.save()

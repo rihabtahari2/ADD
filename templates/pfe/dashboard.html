@@ -110,7 +110,7 @@
         
         <div class="container-fluid pt-4 px-4">
             <div class="row g-4">
-                <div class="col-md-6">
+                <div class="col-md-8">
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
@@ -118,7 +118,7 @@
                             <canvas id="my2Chart"></canvas>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
@@ -126,20 +126,44 @@
                             <canvas id="myChart"></canvas>
                     </div>
                 </div>
-                <div class="col-md-3">
+            </div>
+        </div>
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4">
+                <div class="col-md-4">
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
-                            <h6 class="mb-0">Produits</h6>
+                            
                             <canvas id="produitsChart"></canvas>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-8">
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
-                            <h6 class="mb-0">Produits</h6>
+                        <h6 class="mb-0">Produits par Vente</h6>
+                        <canvas id="produitsChart1"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                            
                             <canvas id="produitsChart2"></canvas>
+                    </div>
+                </div> 
+                <div class="col-md-8">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                        <h6 class="mb-0">Produits par Achat</h6>
+                        <canvas id="produitsChart3"></canvas>
                     </div>
                 </div>
             </div>
@@ -158,63 +182,78 @@
                     <div class="bg-white rounded text-center">
                         <div class="d-flex align-items-center justify-content-between mb-4">
                         </div>
-                            <h6 class="mb-0">Prévision du Chiffre d'Affaires pour l'Année Suivante</h6>
+                            <h6 class="mb-0">Prévision du Chiffre d'Affaires avec croissance de 20%</h6>
                             <canvas id="my5Chart"></canvas>
                     </div>
                 </div>
            </div>
-       </div>
-       <div class="container-fluid pt-4 px-4">
-        <div class="row g-4">
-            <div class="col-md-6">
-                <div class="bg-white rounded text-center">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
+       </div>   
+        <div class="container-fluid pt-4 px-4">
+            <div class="row g-4">
+                
+                <div class="col-md-10">
+                    <div class="bg-white rounded text-center">
+                        <div class="d-flex align-items-center justify-content-between mb-4">
+                        </div>
+                        <h6 class="mb-0">Chiffre d'affaires par année</h6>
+                        <canvas id="chiffreAffairesChart"></canvas>
                     </div>
-                    <h6 class="mb-0">Produits par Vente</h6>
-                    <canvas id="produitsChart1"></canvas>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <div class="bg-white rounded text-center">
-                    <div class="d-flex align-items-center justify-content-between mb-4">
-                    </div>
-                    <h6 class="mb-0">Chiffre d'affaire par années</h6>
-                    <canvas id="chiffreAffairesChart"></canvas>
-                </div>
-            </div>
-       </div>
+           </div>
+        
    </div>
     </body>
     <div style="max-width: 300px;">
         <canvas id="myChart" width="300" height="300"></canvas>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>*
+
     <script>
-        const ctx = document.getElementById('myChart');
-    
-        new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: [ 'Ventes','Achats'],
-                datasets: [{
-                    label: '',
-                    data: [{{ nombre_ventes }}, {{ nombre_achats }}], // Utilisation des variables Django
-                    backgroundColor: [
-                        'rgba(255, 99, 132, 0.2)', // Rouge pour les achats
-                        'rgba(54, 162, 235, 0.2)', // Bleu pour les ventes
-                    ],
-                    borderColor: [
-                        'rgba(255, 99, 132, 1)', // Rouge pour les achats
-                        'rgba(54, 162, 235, 1)', // Bleu pour les ventes
-                    ],
-                    borderWidth: 1
-                }]
-            },
-        });
+    const ctx = document.getElementById('myChart');
+
+    // Supposons que nombre_ventes et nombre_achats sont des variables définies dans votre contexte Django
+    const nombre_ventes = {{ nombre_ventes }};
+    const nombre_achats = {{ nombre_achats }};
+    const total = nombre_ventes + nombre_achats;
+
+    // Calculer les pourcentages
+    const ventes_pourcentage = (nombre_ventes / total * 100).toFixed(2);
+    const achats_pourcentage = (nombre_achats / total * 100).toFixed(2);
+
+    new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['Ventes', 'Achats'],
+            datasets: [{
+                label: '',
+                data: [ventes_pourcentage, achats_pourcentage],
+                backgroundColor: [
+                    'rgba(255, 99, 132, 0.2)', // Rouge pour les achats
+                    'rgba(54, 162, 235, 0.2)', // Bleu pour les ventes
+                ],
+                borderColor: [
+                    'rgba(255, 99, 132, 1)', // Rouge pour les achats
+                    'rgba(54, 162, 235, 1)', // Bleu pour les ventes
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            return `${label}: ${value}%`;
+                        }
+                    }
+                }
+            }
+        }
+    });
     </script>
-    
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <script>
@@ -225,14 +264,14 @@
         const ctx2 = document.getElementById('my2Chart').getContext('2d');
         const labels = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
         const ventesData = {
-            label: 'Nombre de ventes',
+            label: 'Nombre d\'achats',
             backgroundColor: 'rgba(54, 162, 235, 0.2)',
             borderColor: 'rgba(54, 162, 235, 1)',
             borderWidth: 1,
             data: {{ ventes_par_mois|safe }},
         };
         const achatsData = {
-            label: 'Nombre d\'achats',
+            label: 'Nombre de vente',
             backgroundColor: 'rgba(255, 99, 132, 0.2)',
             borderColor: 'rgba(255, 99, 132, 1)',
             borderWidth: 1,
@@ -269,74 +308,7 @@
        
       </div>
       
-      <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-      <script>
-        document.addEventListener('DOMContentLoaded', function () {
-          // Récupérer les produits et leurs pourcentages depuis le contexte
-          const produits = [
-            {% for produit, pourcentage in resultats_de_revenue_par_produit %}
-              '{{ produit }}',
-            {% endfor %}
-          ];
       
-          const pourcentages = [
-            {% for produit, pourcentage in resultats_de_revenue_par_produit %}
-              {{ pourcentage }},
-            {% endfor %}
-          ];
-      
-          // Définir une palette de couleurs pour les produits
-          const palette = [
-            'rgba(128, 128, 0, 0.5)', // Olive
-            'rgba(0, 128, 128, 0.5)', // Sarcelle
-            'rgba(255, 206, 86, 0.5)', // Jaune
-            'rgba(75, 192, 192, 0.5)', // Vert
-            'rgba(153, 102, 255, 0.5)', // Violet
-            'rgba(255, 159, 64, 0.5)', // Orange
-            'rgba(128, 0, 128, 0.5)', // Pourpre
-            'rgba(0, 0, 128, 0.5)', // Bleu foncé
-            'rgba(128, 0, 0, 0.5)', // Rouge foncé
-            'rgba(255, 99, 132, 0.5)', // Rouge
-            'rgba(54, 162, 235, 0.5)', // Bleu
-          ];
-      
-          // Préparer les données dans le format requis par Chart.js
-          const data = {
-            labels: produits,
-            datasets: [{
-              data: pourcentages,
-              backgroundColor: palette.slice(0, produits.length), // Utiliser les couleurs de la palette pour les produits
-              borderColor: palette.slice(0, produits.length), // Utiliser les couleurs de la palette pour les bordures
-              borderWidth: 1
-            }]
-          };
-      
-          // Initialisez l'objet de configuration pour le graphique doughnut
-          const config = {
-            type: 'doughnut',
-            data: data,
-            options: {
-              plugins: {
-                tooltip: {
-                  callbacks: {
-                    label: function (context) {
-                      let label = context.label || '';
-                      if (label) {
-                        label += ': ';
-                      }
-                      label += context.formattedValue + '%';
-                      return label;
-                    }
-                  }
-                }
-              }
-            }
-          };
-      
-          // Créez le graphique en utilisant Chart.js et l'élément canvas
-          const ctx3 = document.getElementById('my3Chart').getContext('2d');
-          new Chart(ctx3, config);
-        });
       </script>
       <canvas id="my8Chart"></canvas>
 
@@ -428,187 +400,28 @@
                 });
             });
         </script>
-        <div style="width: 800px; height: 400px;">
-            <canvas id="my9Chart"></canvas>
-        </div>
-        
-        <script>
-            var ctx9 = document.getElementById('my9Chart').getContext('2d');
-        
-            var labels9 = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-            var data = {
-                labels: labels9,
-                datasets: []
-            };
-        
-            // Définir une fonction pour générer une couleur aléatoire
-            function getRandomColor() {
-                var letters = '0123456789ABCDEF';
-                var color = '#';
-                for (var i = 0; i < 6; i++) {
-                    color += letters[Math.floor(Math.random() * 16)];
-                }
-                return color;
-            }
-        
-            // Créer un objet pour stocker les couleurs des produits
-            var produitColors = {};
-        
-            // Parcourir chaque mois et chaque produit pour récupérer les données
-            {% for mois, chiffre_affaires_par_produit in chiffre_affaires_par_produit_par_mois.items %}
-                {% for produit, chiffre_affaire_total in chiffre_affaires_par_produit.items %}
-                    // Vérifier si la couleur du produit est déjà définie
-                    if (!produitColors[produit]) {
-                        // Générer une couleur aléatoire et l'associer au produit
-                        produitColors[produit] = getRandomColor();
-                    }
-        
-                    // Ajouter les données du produit au dataset
-                    var datasetIndex = data.datasets.findIndex(dataset => dataset.label === produit);
-                    if (datasetIndex === -1) {
-                        // Si le dataset pour ce produit n'existe pas encore, le créer
-                        data.datasets.push({
-                            label: produit,
-                            data: [],
-                            backgroundColor: produitColors[produit],  // Utiliser la couleur associée au produit
-                            borderColor: produitColors[produit],  // Utiliser la même couleur pour la bordure
-                            borderWidth: 1,
-                            stack: 'Stack 1'  // Ajouter cette ligne pour empiler les datasets
-                        });
-                        datasetIndex = data.datasets.length - 1;
-                    }
-                    data.datasets[datasetIndex].data.push({{ chiffre_affaire_total }});
-                {% endfor %}
-            {% endfor %}
-        
-            // Créer le diagramme à aire empilée
-            var my9Chart = new Chart(ctx9, {
-                type: 'bar',  // Utiliser 'bar' pour un diagramme à aire empilée
-                data: data,
-                options: {
-                    scales: {
-                        y: {
-                            stacked: true,  // Empiler les valeurs sur l'axe y
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Chiffre d\'Affaires (en DT)'
-                            }
-                        },
-                        x: {
-                            stacked: true,  // Empiler les valeurs sur l'axe x
-                            title: {
-                                display: true,
-                                text: 'Mois'
-                            }
-                        }
-                    }
-                }
-            });
-        </script>
-        <canvas id="barChart"></canvas>
-        <script>
-            var ctx10 = document.getElementById('barChart').getContext('2d');
-            var produits = [];
-            var totauxTTC = [];
-        
-            {% for libelle, total_ttc in produits_ttc %}
-                produits.push("{{ libelle }}");
-                totauxTTC.push({{ total_ttc }});
-            {% endfor %}
-            // Créer le diagramme de barre
-            var barChart = new Chart(ctx10, {
-                type: 'bar',
-                data: {
-                    labels: produits,
-                    datasets: [{
-                        label: 'Total TTC',
-                        data: totauxTTC,
-                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                        borderColor: 'rgba(255, 99, 132, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    scales: {
-                        y: {
-                            stacked: true,  // Empiler les valeurs sur l'axe y
-                            beginAtZero: true,
-                            title: {
-                                display: true,
-                                text: 'Total TTC (en DT)'
-                            }
-                        },
-                        x: {
-                            stacked: true,  // Empiler les valeurs sur l'axe x
-                            title: {
-                                display: true,
-                                text: 'Produits'
-                            }
-                        }
-                    }
-                        
-                }
-            });
-        </script>
-         <canvas id="bar1Chart"></canvas>
-         <script>
-             var ctx11 = document.getElementById('bar1Chart').getContext('2d');
-             var produits = [];
-             var totauxTTC = [];
-         
-             {% for libelle, total_ttc in produits_ttc1 %}
-                 produits.push("{{ libelle }}");
-                 totauxTTC.push({{ total_ttc }});
-             {% endfor %}
-             // Créer le diagramme de barre
-             var barChart = new Chart(ctx11, {
-                 type: 'bar',
-                 data: {
-                     labels: produits,
-                     datasets: [{
-                         label: 'Total TTC',
-                         data: totauxTTC,
-                         backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                         borderColor: 'rgba(54, 162, 235, 1)',
-                         borderWidth: 1
-                     }]
-                 },
-                 options: {
-                     scales: {
-                         y: {
-                             stacked: true,  // Empiler les valeurs sur l'axe y
-                             beginAtZero: true,
-                             title: {
-                                 display: true,
-                                 text: 'Total TTC (en DT)'
-                             }
-                         },
-                         x: {
-                             stacked: true,  // Empiler les valeurs sur l'axe x
-                             title: {
-                                 display: true,
-                                 text: 'Produits'
-                             }
-                         }
-                     }
-                         
-                 }
-             });
-         </script>
-    </script>
-   
-        <canvas id="produitsChart"></canvas>
+    <canvas id="produitsChart"></canvas>
 
     <script>
         var ctx66 = document.getElementById('produitsChart').getContext('2d');
+    
+        // Supposons que labels_produits et quantites_produits sont des variables définies dans votre contexte Django
+        var labels_produits = {{ labels_produits|safe }};
+        var quantites_produits = {{ quantites_produits|safe }};
+    
+        // Calculer le total des quantités
+        var totalQuantites = quantites_produits.reduce((sum, value) => sum + value, 0);
+    
+        // Calculer les pourcentages
+        var pourcentages_produits = quantites_produits.map(value => ((value / totalQuantites) * 100).toFixed(2));
+    
         var produitsChart = new Chart(ctx66, {
             type: 'doughnut',
             data: {
-                labels: {{ labels_produits|safe }},
+                labels: labels_produits,
                 datasets: [{
                     label: 'Quantité Vendue',
-                    data: {{ quantites_produits|safe }},
+                    data: pourcentages_produits,
                     backgroundColor: [
                         'rgba(128, 128, 0, 0.5)', // Olive
                         'rgba(0, 128, 128, 0.5)', // Sarcelle
@@ -635,38 +448,58 @@
                     title: {
                         display: true,
                         text: 'Top 5 Produits Les Plus Vendus'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value}%`;
+                            }
+                        }
                     }
                 }
             }
         });
-    </script>
+    </script>    
     </script>
     <canvas id="produitsChart2"></canvas>
 
     <script>
         var ctx65 = document.getElementById('produitsChart2').getContext('2d');
+    
+        // Supposons que labels_produits1 et quantites_produits1 sont des variables définies dans votre contexte Django
+        var labels_produits = {{ labels_produits1|safe }};
+        var quantites_produits = {{ quantites_produits1|safe }};
+    
+        // Calculer le total des quantités
+        var totalQuantites = quantites_produits.reduce((sum, value) => sum + value, 0);
+    
+        // Calculer les pourcentages
+        var pourcentages_produits = quantites_produits.map(value => ((value / totalQuantites) * 100).toFixed(2));
+    
         var produitsChart = new Chart(ctx65, {
             type: 'doughnut',
             data: {
-                labels: {{ labels_produits1|safe }},
+                labels: labels_produits,
                 datasets: [{
                     label: 'Quantité Vendue',
-                    data: {{ quantites_produits1|safe }},
+                    data: pourcentages_produits,
                     backgroundColor: [
-                    'rgba(255, 159, 64, 0.5)', // Orange
-                    'rgba(128, 0, 128, 0.5)', // Pourpre
-                    'rgba(0, 0, 128, 0.5)', // Bleu foncé
-                    'rgba(128, 0, 0, 0.5)', // Rouge foncé
-                    'rgba(255, 99, 132, 0.5)', // Rouge
-                    'rgba(54, 162, 235, 0.5)', // Bleu
+                        'rgba(255, 159, 64, 0.5)', // Orange
+                        'rgba(128, 0, 128, 0.5)', // Pourpre
+                        'rgba(0, 0, 128, 0.5)', // Bleu foncé
+                        'rgba(128, 0, 0, 0.5)', // Rouge foncé
+                        'rgba(255, 99, 132, 0.5)', // Rouge
+                        'rgba(54, 162, 235, 0.5)', // Bleu
                     ],
                     borderColor: [
-                    'rgba(255, 159, 64, 0.5)', // Orange
-                    'rgba(128, 0, 128, 0.5)', // Pourpre
-                    'rgba(0, 0, 128, 0.5)', // Bleu foncé
-                    'rgba(128, 0, 0, 0.5)', // Rouge foncé
-                    'rgba(255, 99, 132, 0.5)', // Rouge
-                    'rgba(54, 162, 235, 0.5)', // Bleu
+                        'rgba(255, 159, 64, 0.5)', // Orange
+                        'rgba(128, 0, 128, 0.5)', // Pourpre
+                        'rgba(0, 0, 128, 0.5)', // Bleu foncé
+                        'rgba(128, 0, 0, 0.5)', // Rouge foncé
+                        'rgba(255, 99, 132, 0.5)', // Rouge
+                        'rgba(54, 162, 235, 0.5)', // Bleu
                     ],
                     borderWidth: 1
                 }]
@@ -680,6 +513,15 @@
                     title: {
                         display: true,
                         text: 'Top 5 Produits Les Plus Achetés'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                return `${label}: ${value}%`;
+                            }
+                        }
                     }
                 }
             }
@@ -740,10 +582,59 @@
             options: {
                 scales: {
                     y: {
-                        beginAtZero: true
-                    }
+                            stacked: true,  // Empiler les valeurs sur l'axe y
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Chiffre d\'Affaires (en DT)'
+                            }
+                        },
+                        x: {
+                            stacked: true,  // Empiler les valeurs sur l'axe x
+                            title: {
+                                display: true,
+                                text: 'Année'
+                            }
+                        }
                 }
             }
+        });
+    </script>
+    <canvas id="produitsChart3" width="400" height="200"></canvas>
+    <script>
+        var ctx45 = document.getElementById('produitsChart3').getContext('2d');
+        var produitsChart = new Chart(ctx45, {
+            type: 'bar',
+            data: {
+                labels: {{ labels_produits1|safe }},
+                datasets: [{
+                    label: 'Total TTC',
+                    data: {{ ttc_produits1|safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                }]
+            },
+                options: {
+                     scales: {
+                         y: {
+                             stacked: true,  // Empiler les valeurs sur l'axe y
+                             beginAtZero: true,
+                             title: {
+                                 display: true,
+                                 text: 'Total TTC (en DT)'
+                             }
+                         },
+                         x: {
+                             stacked: true,  // Empiler les valeurs sur l'axe x
+                             title: {
+                                 display: true,
+                                 text: 'Produits'
+                             }
+                         }
+                     }
+                         
+                }
         });
     </script>
       

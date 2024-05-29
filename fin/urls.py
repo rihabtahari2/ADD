@@ -20,7 +20,7 @@ urlpatterns = [
     path('add_assistant/',views.add_assistant, name='add_assistant'),
     path('update_assistant/<str:pk>/', views.update_assistant, name='update_assistant'),
     path('client_assistant/<int:pk>/',views.client_assistant, name='client_assistant'),
-   path('delete_user/<int:user_id>/', views.delete_user, name='delete_user'),
+    path('delete_user/<int:user_id>/', views.delete_user, name='delete_user'),
 
     path('HomePage/',views.home_page, name='Home'),
     path('donne/<int:fichier_id>/',views.donn, name='données'),
@@ -36,8 +36,8 @@ urlpatterns = [
     path('ex/',views.expl, name='l'),
     path('exx/',views.expl1, name='expl'),
 
-    
-
+    path('create_user/', views.create_user, name='create_user'),
+    path('users/', views.user_list, name='user_list'),
     
 ]
    

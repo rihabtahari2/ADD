@@ -49,10 +49,6 @@ INSTALLED_APPS = [
     'django_mongoengine',
     'django_mongoengine.mongo_admin',
 ]
-MONGO_DATABASE_NAME = 'rihab'
-
-from mongoengine import connect
-connect(MONGO_DATABASE_NAME)
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -113,8 +109,14 @@ MONGODB_DATABASES = {
         'port': 27017,  # Port MongoDB par défaut
         'username': '',  # Laisser vide si l'authentification n'est pas nécessaire
         'password': '',  # Laisser vide si l'authentification n'est pas nécessaire
-        'tz_aware': True,  # Si vous voulez que MongoDB soit conscient des fuseaux horaires
     },
+}
+MONGOENGINE_USER = {
+    'name': 'rihab',
+    'host': 'localhost',
+    'port': 27017,
+    'username': '',
+    'password': '',
 }
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
